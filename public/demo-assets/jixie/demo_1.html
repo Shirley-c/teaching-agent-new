@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>互动演示 — 机器人工程基础</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f5f7;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 44px;
+      background: #fff;
+      border-bottom: 0.5px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar .back-btn {
+      color: #534AB7;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .topbar .title { font-size: 14px; font-weight: 500; color: #333; }
+
+    .main-layout { display: flex; height: calc(100vh - 44px); }
+
+    /* Left Panel */
+    .left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Classroom background overlay */
+    .classroom-bg {
+      position: absolute;
+      inset: 0;
+      background: url('classroom.jpg') center/cover no-repeat;
+      z-index: 0;
+      transition: opacity 0.6s ease;
+    }
+    .classroom-bg.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Content stage: the big area shared by background & iframe */
+    .content-stage {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+    .content-stage iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+    .content-stage iframe.active {
+      display: block;
+    }
+
+    /* Left controls and content area */
+    .left-controls {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-top: 0.5px solid rgba(83, 74, 183, 0.3);
+      padding: 12px 16px;
+    }
+
+    /* Content and buttons wrapper */
+    .content-wrapper {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Content area with teacher info */
+    .content-area {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 72px;
+    }
+    .teacher-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .content-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .content-box::-webkit-scrollbar { width: 3px; }
+    .content-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+    .teacher-name {
+      font-size: 11px;
+      color: #a59eff;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .content-text {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.95);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .content-text strong { color: #a59eff; }
+
+    /* Button column - on the right, vertical layout */
+    .btn-column {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 90px;
+    }
+    .ctrl-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 7px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #fff;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover:not(:disabled) {
+      background: rgba(83, 74, 183, 0.8);
+      border-color: #534AB7;
+    }
+    .ctrl-btn.primary {
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      border-color: transparent;
+    }
+    .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Right: Pure Chat Panel */
+    .chat-panel {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      flex-shrink: 0;
+      border-left: 0.5px solid #e0e0e0;
+    }
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 0.5px solid #eee;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chat-header .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+    /* Message styles */
+    .msg { max-width: 100%; }
+    .msg.user {
+      align-self: flex-end;
+      background: #EEEDFE;
+      border: 0.5px solid #d8d5f6;
+      border-radius: 12px 12px 4px 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #3C3489;
+      word-break: break-word;
+      max-width: 85%;
+    }
+    .msg.ai { align-self: flex-start; max-width: 85%; }
+    .msg.ai .msg-label {
+      font-size: 11px;
+      color: #7F77DD;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    .msg.ai .msg-body {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #555;
+      background: #f7f5ff;
+      border: 0.5px solid #e0ddf5;
+      border-radius: 12px 12px 12px 4px;
+      padding: 11px 13px;
+      word-break: break-word;
+    }
+    .msg.ai .msg-body strong { color: #333; font-weight: 500; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 10px 14px;
+      background: #f7f5ff;
+      border: 0.5px solid #e0ddf5;
+      border-radius: 12px 12px 12px 4px;
+    }
+    .typing-indicator span {
+      width: 5px;
+      height: 5px;
+      background: #534AB7;
+      border-radius: 50%;
+      animation: typing-bounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0s; }
+    @keyframes typing-bounce {
+      0%,80%,100% { transform:scale(0.6); opacity:0.5; }
+      40% { transform:scale(1); opacity:1; }
+    }
+
+    /* Chat input area */
+    .chat-input-area {
+      padding: 10px 14px 12px;
+      border-top: 0.5px solid #eee;
+      background: #fff;
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-area input {
+      flex: 1;
+      padding: 9px 13px;
+      border: 0.5px solid #ddd;
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .chat-input-area input:focus { border-color: #534AB7; }
+    .chat-input-area button {
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .chat-input-area button:hover { opacity: 0.9; }
+
+    @media (max-width: 800px) { .chat-panel { width: 340px; } }
+    @media (max-width: 600px) {
+      .main-layout { flex-direction: column; }
+      .left-panel { height: 50vh; }
+      .chat-panel { width: 100%; height: 50vh; border-left: none; border-top: 0.5px solid #e0e0e0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="back-btn" onclick="location.href='index2.html'">← 返回课程</button>
+    <span class="title">机器人工程基础 · 互动演示课堂</span>
+  </div>
+
+  <div class="main-layout">
+    <!-- Left: Iframe + Content Box + Controls -->
+    <div class="left-panel">
+      <!-- Stage area: shared by classroom background and iframe -->
+      <div class="content-stage">
+        <!-- Classroom background (visible initially) -->
+        <div class="classroom-bg" id="classroomBg"></div>
+        <iframe id="mainFrame" src="demo_wurenji.html" allowfullscreen loading="lazy"></iframe>
+      </div>
+      
+      <div class="left-controls">
+        <div class="content-wrapper">
+          <div class="content-area">
+            <div class="teacher-avatar">张</div>
+            <div class="content-box">
+              <div class="teacher-name">张老师</div>
+              <div class="content-text" id="contentText">点击右侧「开始讲解」按钮开始互动学习</div>
+            </div>
+          </div>
+          
+          <div class="btn-column">
+            <button class="ctrl-btn primary" id="startBtn" onclick="startLecture()">
+              <span>▶</span><span id="startBtnText">开始讲解</span>
+            </button>
+            <button class="ctrl-btn" id="speechBtn" onclick="toggleSpeech()">
+              <span>🔊</span><span id="speechBtnText">语音朗读</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Pure Chat Panel (only for user questions) -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="avatar">AI</div>
+        <span>AI 助手</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-label">AI 助手</div>
+          <div class="msg-body">您好！我是您的AI助手。有任何问题可以在这里提问。</div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="输入您的问题..." onkeyup="handleKeyup(event)" />
+        <button onclick="sendQuestion()">发送</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const lectureContent = [
+  '同学们好！欢迎来到《机器人工程基础》课程。今天我们将通过多种互动形式来探索机器人世界的精彩内容。首先，让我们一起来认识一下四旋翼无人机。',
+  '四旋翼无人机是最常见的无人机类型，它通过四个旋翼产生的升力实现飞行。通过调整四个旋翼的转速差，无人机可以实现升降、悬停、前飞、转向等各种飞行动作。',
+  '现在，让我们进入一个更具挑战性的场景——无人机峡谷攀爬。在复杂的峡谷环境中，无人机需要面对地形变化和气流扰动，这对飞控系统的稳定性和鲁棒性提出了很高的要求。',
+  '接下来，我们切换到室内三维场景重建。机器人通过搭载的传感器，利用SLAM技术可以实时构建周围环境的三维地图。这是机器人感知与导航的关键技术之一。',
+  '让我们通过知识图谱来梳理机器人工程的核心知识体系。从机构学基础到运动学分析，从动力学建模到智能控制，这些模块共同构成了机器人工程的理论框架。',
+  '学习完这些知识后，来思考几个问题，检验一下自己的理解。比如：机器人由哪四大核心部分组成？SLAM技术的主要作用是什么？',
+  '最后，让我们一起欣赏各种无人机的精彩图鉴。从消费级航拍无人机到工业级巡检无人机，从微型无人机到大型无人运输机，无人机技术正在深刻改变我们的世界。'
+];
+
+// 每段朗读内容对应的页面映射
+const contentPages = [
+  'demo_wurenji.html',      // 介绍四旋翼无人机 → 无人机峡谷攀爬3D
+  'demo_wurenji0.html',      // 四旋翼飞行原理 → 四旋翼3D演示
+  'demo_wurenji.html',       // 峡谷攀爬挑战 → 无人机峡谷攀爬3D
+  'demo_room3d.html',        // 室内三维重建 → 室内场景重建3D
+  'demo_mindmap.html',       // 知识图谱梳理 → 知识图谱
+  'demo_question.html',      // 思考问题 → 思考问题页面
+  'demo_gallery.html'        // 无人机图鉴 → 无人机图鉴页面
+];
+
+const aiResponses = {
+  '机器人': '机器人是一种能够感知环境、做出决策并执行动作的自动化机械系统。它通常由传感器、控制器、执行器和机械结构四个核心部分组成。',
+  '发展历程': '机器人的发展可以分为几个阶段：1961年第一台工业机器人诞生，1980年代工业机器人普及，2000年代服务机器人兴起，现在是AI与机器人融合的智能时代。',
+  '课程体系': '本课程包含四个核心模块：1.机构学基础 2.运动学分析 3.动力学建模 4.智能控制。每个模块都配有虚拟仿真实验。',
+  '学习建议': '学习机器人工程建议：1.理论与实践并重 2.打好数学基础（线性代数、微积分、力学）3.保持好奇心，主动探索前沿技术。',
+  '定义': '机器人是一种自动化的机械系统，能够自主或半自主地完成任务。它具备感知、决策和执行能力。',
+  '应用': '机器人应用广泛，包括工业制造、医疗保健、物流配送、农业、军事、太空探索等多个领域。',
+  '传感器': '传感器是机器人的"感官"，用于感知周围环境信息，如视觉、听觉、触觉、距离等。常见的传感器有摄像头、超声波传感器、红外传感器等。',
+  '控制': '机器人控制是指对机器人的运动和行为进行规划和调节，使其能够完成预定任务。包括开环控制、闭环控制、自适应控制、智能控制等方法。',
+  '机构学': '机构学是研究机构的结构、运动和动力性能的学科，是机器人设计的基础。',
+  '运动学': '运动学是研究物体位置、速度和加速度等运动特性的学科，不考虑力的作用。',
+  '动力学': '动力学是研究物体运动与作用力之间关系的学科，用于分析机器人的受力和运动规律。'
+};
+
+const contentText = document.getElementById('contentText');
+const chatMessages = document.getElementById('chatMessages');
+const startBtn = document.getElementById('startBtn');
+const startBtnText = document.getElementById('startBtnText');
+const speechBtn = document.getElementById('speechBtn');
+const speechBtnText = document.getElementById('speechBtnText');
+const chatInput = document.getElementById('chatInput');
+
+let currentMsgIndex = 0;
+let isStarted = false;
+let isPaused = false;
+let pauseAfterCurrent = false;
+let typingTimer = null;
+let speechEnabled = true;
+const speechSynthesis = window.speechSynthesis || null;
+
+function displayContent(text) {
+  contentText.textContent = text;
+}
+
+function streamContent(text, callback) {
+  let charIndex = 0;
+  contentText.textContent = '';
+  
+  function typeChar() {
+    if (charIndex < text.length) {
+      contentText.textContent += text[charIndex];
+      charIndex++;
+      let delay = 35;
+      if (text[charIndex-1] === '，' || text[charIndex-1] === '。' || text[charIndex-1] === '.' || text[charIndex-1] === '！' || text[charIndex-1] === '？') {
+        delay = 80;
+      }
+      typingTimer = setTimeout(typeChar, delay);
+    } else {
+      if (callback) callback();
+    }
+  }
+  typeChar();
+}
+
+function switchPage(index) {
+  const mainFrame = document.getElementById('mainFrame');
+  if (mainFrame && index < contentPages.length) {
+    const page = contentPages[index];
+    // 只在页面不同时才切换，避免闪烁
+    if (mainFrame.src.indexOf(page) === -1) {
+      mainFrame.src = page;
+    }
+  }
+}
+
+function playNextSegment() {
+  if (isPaused || pauseAfterCurrent) {
+    typingTimer = setTimeout(playNextSegment, 200);
+    return;
+  }
+  
+  if (currentMsgIndex >= lectureContent.length) {
+    startBtnText.textContent = '完成';
+    startBtn.disabled = true;
+    return;
+  }
+  
+  // 切换当前段落对应的页面
+  switchPage(currentMsgIndex);
+  
+  const text = lectureContent[currentMsgIndex];
+  
+  if (speechEnabled && speechSynthesis) {
+    speakTextWithCallback(text, () => {
+      currentMsgIndex++;
+      if (typingTimer) clearTimeout(typingTimer);
+      if (pauseAfterCurrent) {
+        isPaused = true;
+        pauseAfterCurrent = false;
+      }
+      setTimeout(playNextSegment, 800);
+    });
+  }
+  
+  streamContent(text, () => {
+    if (!speechEnabled || !speechSynthesis) {
+      currentMsgIndex++;
+      if (pauseAfterCurrent) {
+        isPaused = true;
+        pauseAfterCurrent = false;
+      }
+      setTimeout(playNextSegment, 800);
+    }
+  });
+}
+
+function startLecture() {
+  if (isStarted && !isPaused) return;
+  
+  // 首次启动：隐藏教室背景，显示 iframe
+  if (!isStarted) {
+    const bg = document.getElementById('classroomBg');
+    const frame = document.getElementById('mainFrame');
+    if (bg) bg.classList.add('hidden');
+    if (frame) frame.classList.add('active');
+  }
+  
+  isPaused = false;
+  pauseAfterCurrent = false;
+  startBtnText.textContent = '暂停讲解';
+  startBtn.innerHTML = '<span>⏸</span><span id="startBtnText">暂停讲解</span>';
+  startBtn.onclick = togglePause;
+  
+  if (!isStarted) {
+    isStarted = true;
+    currentMsgIndex = 0;
+  }
+  
+  playNextSegment();
+}
+
+function togglePause() {
+  if (isPaused) {
+    isPaused = false;
+    pauseAfterCurrent = false;
+    startBtnText.textContent = '暂停讲解';
+    startBtn.innerHTML = '<span>⏸</span><span id="startBtnText">暂停讲解</span>';
+    if (speechSynthesis) speechSynthesis.resume();
+    playNextSegment();
+  } else {
+    pauseAfterCurrent = true;
+    startBtnText.textContent = '继续讲解';
+    startBtn.innerHTML = '<span>▶</span><span id="startBtnText">继续讲解</span>';
+  }
+}
+
+function restartAll() {
+  if (typingTimer) clearTimeout(typingTimer);
+  if (speechSynthesis) speechSynthesis.cancel();
+  
+  isStarted = false;
+  isPaused = false;
+  pauseAfterCurrent = false;
+  currentMsgIndex = 0;
+  
+  // 恢复教室背景，隐藏 iframe
+  const bg = document.getElementById('classroomBg');
+  const frame = document.getElementById('mainFrame');
+  if (bg) bg.classList.remove('hidden');
+  if (frame) frame.classList.remove('active');
+  
+  // 重置到第一个页面
+  const mainFrame = document.getElementById('mainFrame');
+  if (mainFrame && contentPages.length > 0) {
+    mainFrame.src = contentPages[0];
+  }
+  
+  startBtnText.textContent = '开始讲解';
+  startBtn.innerHTML = '<span>▶</span><span id="startBtnText">开始讲解</span>';
+  startBtn.onclick = startLecture;
+  startBtn.disabled = false;
+  
+  displayContent('点击右侧「开始讲解」按钮开始互动学习');
+}
+
+function toggleSpeech() {
+  if (!speechSynthesis) {
+    alert('您的浏览器不支持语音合成功能');
+    return;
+  }
+  
+  speechEnabled = !speechEnabled;
+  
+  if (speechEnabled) {
+    speechBtnText.textContent = '语音朗读';
+    speechBtn.innerHTML = '<span>🔊</span><span id="speechBtnText">语音朗读</span>';
+    speechBtn.classList.remove('primary');
+  } else {
+    speechBtnText.textContent = '关闭朗读';
+    speechBtn.innerHTML = '<span>🔇</span><span id="speechBtnText">关闭朗读</span>';
+    speechBtn.classList.add('primary');
+    speechSynthesis.cancel();
+  }
+}
+
+function addChatMessage(content, role = 'ai') {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  if (role === 'ai') {
+    div.innerHTML = `<div class="msg-label">AI 助手</div><div class="msg-body">${content}</div>`;
+  } else {
+    div.textContent = content;
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-label">AI 助手</div><div class="typing-indicator"><span></span><span></span><span></span></div>`;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const msgEls = chatMessages.querySelectorAll('.msg');
+  for (let i = msgEls.length - 1; i >= 0; i--) {
+    if (msgEls[i].querySelector('.typing-indicator')) {
+      msgEls[i].remove();
+      break;
+    }
+  }
+}
+
+function sendQuestion() {
+  const question = chatInput.value.trim();
+  if (!question) return;
+  
+  addChatMessage(question, 'user');
+  chatInput.value = '';
+  
+  let response = '抱歉，我暂时无法回答这个问题。您可以尝试询问关于机器人定义、发展历程、课程体系、学习建议等方面的问题。';
+  
+  for (const key in aiResponses) {
+    if (question.includes(key)) {
+      response = aiResponses[key];
+      break;
+    }
+  }
+  
+  addTypingIndicator();
+  
+  setTimeout(() => {
+    removeTypingIndicator();
+    addChatMessage(response);
+    if (speechEnabled && speechSynthesis) speakText(response);
+  }, 500 + Math.random() * 300);
+}
+
+function handleKeyup(event) {
+  if (event.key === 'Enter') sendQuestion();
+}
+
+function speakTextWithCallback(text, callback) {
+  if (!speechEnabled || !speechSynthesis) {
+    if (callback) callback();
+    return;
+  }
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'zh-CN';
+  utterance.rate = 0.9;
+  utterance.volume = 0.8;
+  
+  const voices = speechSynthesis.getVoices();
+  const chineseVoice = voices.find(v => v.lang.startsWith('zh')) || voices.find(v => v.name.includes('Chinese'));
+  if (chineseVoice) utterance.voice = chineseVoice;
+  
+  utterance.onend = function() { if (callback) callback(); };
+  utterance.onerror = function() { if (callback) callback(); };
+  
+  speechSynthesis.speak(utterance);
+}
+
+function speakText(text) {
+  speakTextWithCallback(text, null);
+}
+
+restartAll();
+</script>
+</body>
+</html>

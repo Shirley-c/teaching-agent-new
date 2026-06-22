@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>无人机图片库 — 四旋翼图鉴</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0d0d0d;
+      color: #eee;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* === Main Layout: left gallery + right chat === */
+    .main-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    .left-panel {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chat-panel {
+      width: 340px;
+      flex-shrink: 0;
+      background: #fff;
+      border-left: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* === Left: Top Bar === */
+    .topbar {
+      height: 52px;
+      background: rgba(20,20,20,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 0.5px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar .back-btn {
+      color: #9F97FF;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      font-family: inherit;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .topbar .back-btn:hover { background: rgba(159,151,255,0.1); }
+    .topbar .title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #ddd;
+    }
+    .topbar .count-badge {
+      margin-left: auto;
+      font-size: 11px;
+      color: #888;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 3px 10px;
+    }
+    .topbar .filter-toggle {
+      margin-left: 8px;
+      font-size: 11px;
+      color: #9F97FF;
+      background: rgba(159,151,255,0.1);
+      border: 0.5px solid rgba(159,151,255,0.2);
+      border-radius: 10px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .topbar .filter-toggle:hover { background: rgba(159,151,255,0.2); }
+    .topbar .filter-toggle.active {
+      background: rgba(159,151,255,0.25);
+      border-color: #9F97FF;
+    }
+
+    /* === Left: Filter Bar === */
+    .filter-bar {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+      background: rgba(20,20,20,0.9);
+      border-bottom: 0.5px solid rgba(255,255,255,0.05);
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+    .filter-bar.open {
+      max-height: 80px;
+      padding: 14px 20px;
+    }
+    .filter-bar input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: #ddd;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .filter-bar input:focus { border-color: #9F97FF; }
+    .filter-bar input::placeholder { color: #666; }
+
+    /* === Left: Gallery Grid Area (fills remaining space) === */
+    .gallery-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 30px;
+    }
+    .gallery-scroll::-webkit-scrollbar { width: 4px; }
+    .gallery-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .gallery-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 16 / 9;
+      background: #1a1a1a;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s;
+    }
+    .gallery-item:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 30px rgba(159,151,255,0.15);
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: filter 0.3s;
+    }
+    .gallery-item:hover img { filter: brightness(1.1); }
+    .gallery-item .item-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 40px 10px 8px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      color: rgba(255,255,255,0.85);
+      font-size: 11px;
+      line-height: 1.45;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .gallery-item:hover .item-overlay { opacity: 1; }
+
+    .gallery-item .play-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: rgba(0,0,0,0.6);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 10px;
+      color: #9F97FF;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .gallery-item:hover .play-badge { opacity: 1; }
+
+    .gallery-item .index-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* === Empty state === */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #555;
+    }
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 13px; line-height: 1.6; }
+
+    /* === Chat Panel === */
+    .chat-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-header .indicator {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #4CAF50;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
+
+    .msg {
+      max-width: 90%;
+      line-height: 1.55;
+      font-size: 13px;
+      animation: msgIn 0.3s ease;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #9F97FF;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 14px 14px 4px 14px;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      color: #444;
+    }
+    .msg.ai .msg-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .msg.ai .msg-body {
+      background: #f7f7f8;
+      border: 1px solid #e5e5ea;
+      padding: 10px 14px;
+      border-radius: 14px 14px 14px 4px;
+    }
+    .msg.ai .msg-body .section-title {
+      font-weight: 500;
+      color: #9F97FF;
+      margin-bottom: 6px;
+    }
+    .msg.ai .msg-body ul {
+      margin: 6px 0;
+      padding-left: 16px;
+    }
+    .msg.ai .msg-body li {
+      margin-bottom: 4px;
+    }
+
+    .chat-input-area {
+      padding: 10px 14px 14px;
+      border-top: 1px solid #eee;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .chat-input-area input {
+      flex: 1;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13px;
+      color: #333;
+      outline: none;
+      font-family: inherit;
+    }
+    .chat-input-area input:focus { border-color: #9F97FF; }
+    .chat-input-area input::placeholder { color: #999; }
+    .chat-input-area .send-btn {
+      background: #9F97FF;
+      border: none;
+      border-radius: 10px;
+      padding: 0 16px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .chat-input-area .send-btn:hover { background: #b0a8ff; }
+
+    /* === Slideshow Overlay (covers left-panel only) === */
+    .slideshow {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.96);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+    }
+    .slideshow.active { display: flex; }
+
+    .slideshow .close-btn {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 26px;
+      cursor: pointer;
+      z-index: 10;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: none;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .slideshow .close-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+
+    .slideshow .counter {
+      position: absolute;
+      top: 26px;
+      left: 20px;
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .slideshow .slide-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      flex: 1;
+      position: relative;
+    }
+
+    .slideshow .slide-img {
+      max-width: 85vw;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+      transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+    }
+    .slideshow .slide-img.entering {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+
+    .slideshow .slide-title {
+      color: rgba(255,255,255,0.55);
+      font-size: 13px;
+      margin: 16px 0 20px;
+      max-width: 70vw;
+      text-align: center;
+      line-height: 1.6;
+      padding: 0 60px;
+    }
+
+    .slideshow .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.7);
+      font-size: 30px;
+      cursor: pointer;
+      z-index: 10;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .slideshow .nav-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .slideshow .nav-btn:disabled {
+      opacity: 0.15;
+      cursor: default;
+      background: transparent;
+      border-color: transparent;
+    }
+    .slideshow .nav-prev { left: 20px; }
+    .slideshow .nav-next { right: 20px; }
+
+    .slideshow .thumb-strip {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      padding: 0 20px;
+      overflow-x: auto;
+      max-width: 90vw;
+      margin-bottom: 14px;
+    }
+    .slideshow .thumb-strip::-webkit-scrollbar { height: 2px; }
+    .slideshow .thumb-strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 1px; }
+    .slideshow .thumb-strip img {
+      width: 48px;
+      height: 27px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0.4;
+      transition: all 0.15s;
+      border: 1.5px solid transparent;
+      flex-shrink: 0;
+    }
+    .slideshow .thumb-strip img:hover { opacity: 0.8; }
+    .slideshow .thumb-strip img.active {
+      opacity: 1;
+      border-color: #9F97FF;
+    }
+
+    /* === Responsive === */
+    @media (max-width: 900px) {
+      .chat-panel { width: 280px; }
+    }
+    @media (max-width: 700px) {
+      .main-layout { flex-direction: column; }
+      .left-panel { height: 55vh; }
+      .chat-panel { width: 100%; height: 45vh; }
+      .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+      .gallery-scroll { padding: 12px 10px 20px; }
+      .slideshow .slide-img { max-width: 92vw; max-height: 55vh; }
+      .slideshow .nav-btn { width: 38px; height: 38px; font-size: 22px; }
+      .slideshow .nav-prev { left: 8px; }
+      .slideshow .nav-next { right: 8px; }
+      .slideshow .slide-title { font-size: 12px; padding: 0 40px; }
+      .slideshow .thumb-strip img { width: 36px; height: 20px; }
+      .topbar .filter-toggle { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-layout">
+
+  <!-- ========== LEFT PANEL: Gallery ========== -->
+  <div class="left-panel">
+
+    <div class="topbar">
+      <button class="back-btn" onclick="location.href='drone-video.html'">← 返回视频</button>
+      <span class="title">✈ 无人机图鉴</span>
+      <span class="count-badge" id="countBadge">42 张</span>
+      <button class="filter-toggle" id="filterToggle" onclick="toggleFilter()">🔍 搜索</button>
+    </div>
+
+    <div class="filter-bar" id="filterBar">
+      <input type="text" id="filterInput" placeholder="搜索标题… 植保、航拍、穿越机" oninput="filterGallery()" />
+    </div>
+
+    <div class="gallery-scroll">
+      <div class="gallery-grid" id="galleryGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="icon">&#128270;</div>
+        <p>没有找到匹配的图片<br>试试其他关键词</p>
+      </div>
+    </div>
+
+    <!-- ========== SLIDESHOW OVERLAY (inside left-panel) ========== -->
+    <div class="slideshow" id="slideshow">
+      <button class="close-btn" onclick="closeSlideshow()">✕</button>
+      <span class="counter" id="slideCounter"></span>
+
+      <div class="slide-wrapper">
+        <button class="nav-btn nav-prev" id="slidePrev" onclick="navigateSlide(-1)">‹</button>
+        <img class="slide-img entering" id="slideImg" src="" alt="" />
+        <button class="nav-btn nav-next" id="slideNext" onclick="navigateSlide(1)">›</button>
+      </div>
+
+      <div class="slide-title" id="slideTitle"></div>
+      <div class="thumb-strip" id="thumbStrip"></div>
+    </div>
+  </div>
+
+  <!-- ========== RIGHT PANEL: Chat ========== -->
+  <div class="chat-panel">
+    <div class="chat-header">
+      <span class="indicator"></span>
+      AI 教学助手
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="问我关于无人机图片的问题…" />
+      <button class="send-btn" onclick="handleChat()">发送</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================
+// DRONE IMAGE DATASET — 42 images from Bilibili
+// ============================================
+const droneImages = [
+  { url: '//i2.hdslb.com/bfs/archive/43f5be53628882a57ac39d5f71f165343a826e1d.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机应用场景' },
+  { url: '//i0.hdslb.com/bfs/archive/ab0c30ccc982c8f00091483c523dc1e6dd35c1bb.jpg@672w_378h_1c_!web-search-common-cover', title: '10万1台的无人机用来送外卖？' },
+  { url: '//archive.biliimg.com/bfs/archive/41f1fc11ed83d87d3a4f3084637f94a39d60ee38.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机行业应用入门与进阶' },
+  { url: '//i0.hdslb.com/bfs/archive/0918bd2fe5ab4b258ea99facae9703b219f3dbd0.jpg@672w_378h_1c_!web-search-common-cover', title: '低空经济落地民生！无人机解锁多样新用途' },
+  { url: '//i0.hdslb.com/bfs/archive/547fc498f56d69153803a8a08af4d43f152b4a15.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机原理与应用' },
+  { url: '//i2.hdslb.com/bfs/archive/82efdbc003fd63e94d90f1f5007e0b48ca8da504.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机扫盲，什么是无人机？' },
+  { url: '//i0.hdslb.com/bfs/archive/e79f55e05a84d8ef0dc7a75814c2221b77078681.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机的用途' },
+  { url: '//i0.hdslb.com/bfs/archive/66ba5b1b2c2665516873ce7210380da06c0a2fff.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机应用场景汇总' },
+  { url: '//archive.biliimg.com/bfs/archive/7bf17263d40975eed2d02a9d43527bfcff9708dc.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机快速入门，0基础的终极入门指南' },
+  { url: '//i0.hdslb.com/bfs/archive/ca000b1dde899a5957af1454f138e078f2bbd688.jpg@672w_378h_1c_!web-search-common-cover', title: '穿越机与无人机到底有什么区别？' },
+  { url: '//i0.hdslb.com/bfs/archive/c4020b8e68d41da090be6ffcb5072d6e9a4abd82.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机基础知识' },
+  { url: '//i1.hdslb.com/bfs/archive/e8358c0cacfe6e1fd84e56ccbca19d4ac128db39.jpg@672w_378h_1c_!web-search-common-cover', title: '买了无人机之后才会明白的真相' },
+  { url: '//i0.hdslb.com/bfs/archive/497fb0c5e32413869a687054e2f3f2b907b05a2d.jpg@672w_378h_1c_!web-search-common-cover', title: '天空的主宰：无人机与反制博弈' },
+  { url: '//i0.hdslb.com/bfs/archive/5e55e1702860dbd39b3dae1f3739ad6d4f506bc8.jpg@672w_378h_1c_!web-search-common-cover', title: '十分钟吃透工业无人机行业现状' },
+  { url: '//archive.biliimg.com/bfs/archive/08b1b17a9b4a0228c304c48bf33fe476bb17c616.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机操作规程' },
+  { url: '//i2.hdslb.com/bfs/archive/d44818bd569f068cafdb15e364ac8a779d4acbb4.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机的工作原理 — 秘密全在4个螺旋桨' },
+  { url: '//i0.hdslb.com/bfs/archive/6990faa847d895282ec7bdac8cca20a9d38d52a0.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机的工作原理' },
+  { url: '//i2.hdslb.com/bfs/archive/7a03ac1459ff9e58d873f9f1be92022b6cf59d78.jpg@672w_378h_1c_!web-search-common-cover', title: '廉价无人机体验感如何？' },
+  { url: '//i0.hdslb.com/bfs/archive/0d984d07d299b2b1f26ccdf9fe6344d3a8f07ee2.jpg@672w_378h_1c_!web-search-common-cover', title: '45元成本手搓无人机，硬件+源码全开源' },
+  { url: '//i2.hdslb.com/bfs/archive/fdb3edf515a87305149f2098e2726e7858ff0b09.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机拆解：核心零件背后的硬核科技' },
+  { url: '//archive.biliimg.com/bfs/archive/ede0356e842e289feeb594ec85bbd454d41c614a.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机行业应用入门与进阶（进阶篇）' },
+  { url: '//i2.hdslb.com/bfs/archive/99cb4c0738c00bc63b08383bf08d1c862773b428.jpg@672w_378h_1c_!web-search-common-cover', title: '果园植保无人机实战' },
+  { url: '//i0.hdslb.com/bfs/archive/74390478053b3d9d8d6bf79f37472c3b07c81c97.jpg@672w_378h_1c_!web-search-common-cover', title: '2026无人机合规飞行全攻略' },
+  { url: '//i2.hdslb.com/bfs/archive/57a9e8889c81dde63b6183df544f6e43c7b5d377.jpg@672w_378h_1c_!web-search-common-cover', title: '揭秘无人机的神奇功能' },
+  { url: '//i0.hdslb.com/bfs/archive/51207fb8b383a884829b2173c4e2050b0059f6f2.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机进化史，主宰天空的逆袭之路' },
+  { url: '//i1.hdslb.com/bfs/archive/a429b438612fef1965e50abd74a8871eb44f1ad1.jpg@672w_378h_1c_!web-search-common-cover', title: '家里无人机竟然还有这么多玩法' },
+  { url: '//i2.hdslb.com/bfs/archive/92c3e71691e37495bfa39f25755988b7a2608e30.jpg@672w_378h_1c_!web-search-common-cover', title: '从零开始学习无人机原理及组装' },
+  { url: '//i1.hdslb.com/bfs/archive/a0ab7f8d47a0fd44e412331d788d7ab7f576cccc.jpg@672w_378h_1c_!web-search-common-cover', title: '技术狂人让中国无人机碾压全球' },
+  { url: '//i1.hdslb.com/bfs/archive/283f9c58bd3d10a856ed33b3c00e81b5aa724403.jpg@672w_378h_1c_!web-search-common-cover', title: '299元无人机试飞体验' },
+  { url: '//i2.hdslb.com/bfs/archive/b07e8a3c33965d8e14abe01cd1282ac306a1da1a.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机的发展和用途' },
+  { url: '//i1.hdslb.com/bfs/archive/85bb135ad9a98215d90a9e4cb5e0ca0af6e4f740.jpg@672w_378h_1c_!web-search-common-cover', title: '一些有趣的无人机' },
+  { url: '//i0.hdslb.com/bfs/archive/9384d3e1f91cec6c498504fa718a31853c61fc2c.jpg@672w_378h_1c_!web-search-common-cover', title: '2026年顶级军用无人机一览' },
+  { url: '//i1.hdslb.com/bfs/archive/17fef4cb274869da66307ecb115a46e23baa8779.jpg@672w_378h_1c_!web-search-common-cover', title: '19岁空中F1飞手把无人机玩出新高度' },
+  { url: '//i0.hdslb.com/bfs/archive/266a352d5afd9482b0a9aa6f398b846b09ab3854.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机日赚多少？玩家哭诉回本太难' },
+  { url: '//i0.hdslb.com/bfs/archive/f887ffe3425d2239e34103298f83a9921b702962.jpg@672w_378h_1c_!web-search-common-cover', title: '穿越机入门必备技能 — 焊接教程' },
+  { url: '//i1.hdslb.com/bfs/archive/1b08c51810759995157276731b69a74c5ac49bac.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机通信链路的几种方式' },
+  { url: '//i2.hdslb.com/bfs/archive/47d892804f3483c88eda7532b35b8cb5a5e04bce.jpg@672w_378h_1c_!web-search-common-cover', title: 'BBC英语：无人机的新用途' },
+  { url: '//i2.hdslb.com/bfs/archive/afa51a7c075a260cb0241d5f4cea00c47f7f420a.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机科普小知识' },
+  { url: '//i1.hdslb.com/bfs/archive/21151172fa1d2c99c6a3f47eb63e0c72d119c86c.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机的用途超乎你的想象' },
+  { url: '//i2.hdslb.com/bfs/archive/759baea3af98c5d1f6b1690fe0ebdc0c4ccf5621.jpg@672w_378h_1c_!web-search-common-cover', title: '无人机防御系统有什么作用？' },
+  { url: '//i0.hdslb.com/bfs/archive/e436c8b95c8679dcdba9a9c0bbd57b95cf430f8f.jpg@672w_378h_1c_!web-search-common-cover', title: '考无人机CAAC驾照有什么用？' },
+  { url: '//i2.hdslb.com/bfs/archive/aa284c02ac0b858832f8afa4391d5bbe2d5b5e45.jpg@672w_378h_1c_!web-search-common-cover', title: '十大无人机炸机第三期' }
+];
+
+// ============================================
+// GALLERY RENDER
+// ============================================
+let currentSlideIndex = 0;
+let filteredIndices = [];
+
+function renderGallery(items) {
+  const grid = document.getElementById('galleryGrid');
+  const emptyState = document.getElementById('emptyState');
+  grid.innerHTML = '';
+
+  if (!items || items.length === 0) {
+    emptyState.style.display = '';
+    return;
+  }
+  emptyState.style.display = 'none';
+
+  items.forEach((img) => {
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.onclick = () => openSlideshow(img.originalIndex);
+
+    const titleShort = img.title.length > 28 ? img.title.slice(0, 26) + '…' : img.title;
+
+    item.innerHTML = `
+      <img src="https:${img.url}" alt="${img.title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+      <div class="play-badge">▶ B站</div>
+      <div class="index-badge">${img.originalIndex + 1}</div>
+      <div class="item-overlay">${titleShort}</div>
+    `;
+    grid.appendChild(item);
+  });
+}
+
+function buildGallery() {
+  const full = droneImages.map((img, idx) => ({ ...img, originalIndex: idx }));
+  renderGallery(full);
+}
+
+// ============================================
+// FILTER (Search by title)
+// ============================================
+let filterActive = false;
+
+function toggleFilter() {
+  const bar = document.getElementById('filterBar');
+  const toggle = document.getElementById('filterToggle');
+  filterActive = !filterActive;
+  bar.classList.toggle('open', filterActive);
+  toggle.classList.toggle('active', filterActive);
+  if (filterActive) {
+    document.getElementById('filterInput').focus();
+  } else {
+    document.getElementById('filterInput').value = '';
+    buildGallery();
+  }
+}
+
+function filterGallery() {
+  const query = document.getElementById('filterInput').value.trim().toLowerCase();
+  if (!query) { buildGallery(); return; }
+  const filtered = droneImages
+    .map((img, idx) => ({ ...img, originalIndex: idx }))
+    .filter(img => img.title.toLowerCase().includes(query));
+  renderGallery(filtered);
+}
+
+// ============================================
+// SLIDESHOW
+// ============================================
+function openSlideshow(index) {
+  currentSlideIndex = index;
+  updateSlide();
+  document.getElementById('slideshow').classList.add('active');
+  renderThumbStrip();
+  setTimeout(() => {
+    const thumb = document.querySelector('.thumb-strip img.active');
+    if (thumb) thumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, 150);
+}
+
+function closeSlideshow() {
+  document.getElementById('slideshow').classList.remove('active');
+}
+
+function navigateSlide(direction) {
+  const newIndex = currentSlideIndex + direction;
+  if (newIndex < 0 || newIndex >= droneImages.length) return;
+  currentSlideIndex = newIndex;
+  updateSlide();
+  const thumb = document.querySelector('.thumb-strip img.active');
+  if (thumb) thumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+function goToSlide(index) {
+  if (index < 0 || index >= droneImages.length) return;
+  currentSlideIndex = index;
+  updateSlide();
+}
+
+function updateSlide() {
+  const img = droneImages[currentSlideIndex];
+  const slideImg = document.getElementById('slideImg');
+  const slideTitle = document.getElementById('slideTitle');
+  const slideCounter = document.getElementById('slideCounter');
+  const prevBtn = document.getElementById('slidePrev');
+  const nextBtn = document.getElementById('slideNext');
+
+  slideImg.classList.add('entering');
+  setTimeout(() => {
+    slideImg.src = 'https:' + img.url;
+    slideImg.alt = img.title;
+    slideImg.classList.remove('entering');
+  }, 60);
+
+  slideTitle.textContent = img.title;
+  slideCounter.textContent = `${currentSlideIndex + 1} / ${droneImages.length}`;
+  prevBtn.disabled = currentSlideIndex === 0;
+  nextBtn.disabled = currentSlideIndex === droneImages.length - 1;
+
+  document.querySelectorAll('.thumb-strip img').forEach((el, i) => {
+    el.classList.toggle('active', i === currentSlideIndex);
+  });
+}
+
+function renderThumbStrip() {
+  const strip = document.getElementById('thumbStrip');
+  strip.innerHTML = '';
+  droneImages.forEach((img, idx) => {
+    const thumb = document.createElement('img');
+    thumb.src = 'https:' + img.url;
+    thumb.alt = img.title;
+    thumb.className = idx === currentSlideIndex ? 'active' : '';
+    thumb.onclick = () => goToSlide(idx);
+    strip.appendChild(thumb);
+  });
+}
+
+function goFullscreen() {
+  const el = document.getElementById('slideshow');
+  if (el.requestFullscreen) el.requestFullscreen();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (!document.getElementById('slideshow').classList.contains('active')) return;
+  if (e.key === 'ArrowLeft') navigateSlide(-1);
+  if (e.key === 'ArrowRight') navigateSlide(1);
+  if (e.key === 'Escape') closeSlideshow();
+  if (e.key === 'f' || e.key === 'F') goFullscreen();
+});
+
+// ============================================
+// CHAT SYSTEM
+// ============================================
+const chatMessages = document.getElementById('chatMessages');
+
+function addMessage(content, sender = 'ai') {
+  const div = document.createElement('div');
+  div.className = `msg ${sender}`;
+  if (sender === 'ai') {
+    div.innerHTML = `<div class="msg-label">AI 教学助手</div><div class="msg-body">${content}</div>`;
+  } else {
+    div.textContent = content;
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function handleChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addMessage(text, 'user');
+
+  // Simple response routing
+  setTimeout(() => {
+    const lower = text.toLowerCase();
+
+    if (lower.includes('视频') || lower.includes('回去') || lower.includes('返回')) {
+      addMessage('好的，正在跳转回视频页面…');
+      setTimeout(() => { window.location.href = 'drone-video.html'; }, 600);
+      return;
+    }
+
+    if (lower.includes('搜索') || lower.includes('找') || lower.includes('查找')) {
+      addMessage('你可以点击顶部的 <strong>🔍 搜索</strong> 按钮，输入关键词如"植保""航拍""穿越机"来筛选图片。');
+      return;
+    }
+
+    if (lower.includes('幻灯') || lower.includes('播放') || lower.includes('全屏')) {
+      addMessage('点击任意图片即可进入全屏幻灯模式，支持：<br>• ← → 箭头切换<br>• ESC 关闭<br>• F 全屏显示<br>• 底部缩略图快速跳转');
+      return;
+    }
+
+    if (lower.includes('多少') || lower.includes('几张') || lower.includes('数量') || lower.includes('一共')) {
+      addMessage(`当前图库共收录 <strong>${droneImages.length} 张</strong> 无人机相关封面图，全部来自 B站。`);
+      return;
+    }
+
+    // Default response
+    addMessage(`你想了解什么？试试问：<br>• "多少张" — 查看图片数量<br>• "怎么搜索" — 搜索图片的方法<br>• "全屏播放" — 幻灯播放操作<br>• "返回视频" — 回到视频页面`);
+  }, 300);
+}
+
+// Chat Enter key
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') handleChat();
+});
+
+// === Welcome messages ===
+(function startChat() {
+  addMessage(`<div class="section-title">✈ 欢迎来到无人机图鉴</div>
+这里收录了 <strong>42 张</strong> 来自 B站的无人机封面图，涵盖航拍、植保、物流、军事、穿越机等主题。<br><br>
+<strong>操作提示：</strong><br>
+• 点击任意图片 — 全屏幻灯播放（← → 切换，ESC 退出）<br>
+• 🔍 搜索 — 按标题关键词筛选图片<br>
+• 支持 <strong>F</strong> 键全屏模式<br><br>
+<strong>试试对我说：</strong><br>
+• "怎么搜索" — 查看搜索方法<br>
+• "全屏播放" — 了解幻灯操作<br>
+• "返回视频" — 回到视频教学页面`);
+})();
+
+// Init gallery
+buildGallery();
+console.log('无人机图片图鉴已加载 — 键盘快捷键：← → 切换 | ESC 关闭 | F 全屏');
+</script>
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四旋翼无人机 — 3D 演示</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #eaeaea;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .viewport-panel {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #eaeaea;
+    }
+    #canvas3d {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .viewport-overlay {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .vp-btn {
+      background: rgba(255,255,255,0.9);
+      border: 0.5px solid #d0d0d0;
+      color: #555;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .vp-btn:hover, .vp-btn.active {
+      background: #EEEDFE;
+      border-color: #7F77DD;
+      color: #534AB7;
+    }
+    .viewport-label {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      font-size: 11px;
+      color: #aaa;
+      letter-spacing: 1px;
+    }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .viewport-overlay { gap: 4px; }
+      .vp-btn { font-size: 10px; padding: 5px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport-panel">
+    <div class="viewport-label">3D VIEWPORT — 四旋翼无人机</div>
+    <canvas id="canvas3d"></canvas>
+    <div class="viewport-overlay">
+      <button class="vp-btn active" id="btn-spin" onclick="toggleSpin()">自动旋转</button>
+      <button class="vp-btn" id="btn-pitch" onclick="demoPitch()">俯仰演示</button>
+      <button class="vp-btn" id="btn-roll" onclick="demoRoll()">横滚演示</button>
+      <button class="vp-btn" id="btn-yaw" onclick="demoYaw()">偏航演示</button>
+     
+    </div>
+  </div>
+
+<script>
+// ============================================
+// THREE.JS 3D DRONE SCENE
+// ============================================
+let scene, camera, renderer, drone, propellers = [];
+let autoRotate = true;
+let animating = false;
+let demoAnim = null;
+const clock = new THREE.Clock();
+
+// Auto cycle modes every 2 seconds
+const modes = ['spin', 'pitch', 'roll', 'yaw'];
+let cycleIndex = 0;
+let cycleTimer = null;
+let autoCycleEnabled = true;
+
+function init3D() {
+  const canvas = document.getElementById('canvas3d');
+  const container = canvas.parentElement;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xeaeaea);
+  scene.fog = new THREE.Fog(0xeaeaea, 15, 35);
+
+  camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+  camera.position.set(5, 4, 5);
+  camera.lookAt(0, 0.5, 0);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+
+  // Lights
+  const amb = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(amb);
+  const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+  dir.position.set(5, 8, 5);
+  dir.castShadow = true;
+  scene.add(dir);
+  const point = new THREE.PointLight(0x7F77DD, 0.3, 20);
+  point.position.set(-3, 5, -3);
+  scene.add(point);
+
+  // Grid
+  const grid = new THREE.GridHelper(20, 40, 0xcccccc, 0xdddddd);
+  scene.add(grid);
+
+  // Drone group
+  drone = new THREE.Group();
+  scene.add(drone);
+
+  // Central body
+  const bodyGeo = new THREE.BoxGeometry(0.6, 0.15, 0.6);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x555577, metalness: 0.6, roughness: 0.3 });
+  const body = new THREE.Mesh(bodyGeo, bodyMat);
+  body.position.y = 0.5;
+  drone.add(body);
+
+  // Top cover (dome)
+  const domeGeo = new THREE.SphereGeometry(0.3, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeMat = new THREE.MeshStandardMaterial({ color: 0x7F77DD, metalness: 0.4, roughness: 0.4 });
+  const dome = new THREE.Mesh(domeGeo, domeMat);
+  dome.position.y = 0.575;
+  drone.add(dome);
+
+  // Arms and motors
+  const armPositions = [
+    { x: 1, z: 1, label: 'FL' },
+    { x: -1, z: 1, label: 'FR' },
+    { x: -1, z: -1, label: 'RR' },
+    { x: 1, z: -1, label: 'RL' }
+  ];
+  const armColors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0xa29bfe];
+
+  armPositions.forEach((pos, i) => {
+    // Arm
+    const armLen = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
+    const angle = Math.atan2(pos.z, pos.x);
+    const armGeo = new THREE.CylinderGeometry(0.04, 0.04, armLen + 0.3, 8);
+    const armMat = new THREE.MeshStandardMaterial({ color: 0x666688, metalness: 0.7, roughness: 0.3 });
+    const arm = new THREE.Mesh(armGeo, armMat);
+    arm.rotation.z = Math.PI / 2;
+    arm.rotation.y = -angle;
+    arm.position.set(pos.x / 2, 0.5, pos.z / 2);
+    drone.add(arm);
+
+    // Motor housing
+    const motorGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.1, 16);
+    const motorMat = new THREE.MeshStandardMaterial({ color: armColors[i], metalness: 0.5, roughness: 0.4 });
+    const motor = new THREE.Mesh(motorGeo, motorMat);
+    motor.position.set(pos.x, 0.55, pos.z);
+    drone.add(motor);
+
+    // Propeller
+    const propGroup = new THREE.Group();
+    propGroup.position.set(pos.x, 0.62, pos.z);
+
+    const blade1Geo = new THREE.BoxGeometry(0.7, 0.01, 0.06);
+    const bladeMat = new THREE.MeshStandardMaterial({ color: 0x888899, transparent: true, opacity: 0.5 });
+    const blade1 = new THREE.Mesh(blade1Geo, bladeMat);
+    propGroup.add(blade1);
+
+    const blade2 = new THREE.Mesh(blade1Geo, bladeMat);
+    blade2.rotation.y = Math.PI / 2;
+    propGroup.add(blade2);
+
+    // Prop disc (visual rotation effect)
+    const discGeo = new THREE.CircleGeometry(0.35, 32);
+    const discMat = new THREE.MeshBasicMaterial({ color: armColors[i], transparent: true, opacity: 0.06 });
+    const disc = new THREE.Mesh(discGeo, discMat);
+    disc.rotation.x = -Math.PI / 2;
+    disc.position.y = 0.01;
+    propGroup.add(disc);
+
+    drone.add(propGroup);
+    propellers.push({ group: propGroup, direction: i % 2 === 0 ? 1 : -1, baseSpeed: 8 + i });
+  });
+
+  // Coordinate axes
+  const axLen = 2.5;
+  const axes = [
+    { dir: [axLen, 0, 0], color: 0xff4444 },
+    { dir: [0, axLen, 0], color: 0x44ff44 },
+    { dir: [0, 0, axLen], color: 0x4488ff }
+  ];
+  axes.forEach(a => {
+    const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(...a.dir)];
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineBasicMaterial({ color: a.color, transparent: true, opacity: 0.3 });
+    scene.add(new THREE.Line(geo, mat));
+  });
+
+  // Labels (using sprite text)
+  function makeLabel(text, pos, color) {
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = 128;
+    canvas2.height = 48;
+    const ctx = canvas2.getContext('2d');
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, 64, 34);
+    const tex = new THREE.CanvasTexture(canvas2);
+    const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.set(pos[0], pos[1], pos[2]);
+    sprite.scale.set(0.8, 0.3, 1);
+    scene.add(sprite);
+  }
+  makeLabel('X', [axLen + 0.3, 0, 0], '#ff6666');
+  makeLabel('Y', [0, axLen + 0.3, 0], '#66ff66');
+  makeLabel('Z', [0, 0, axLen + 0.3], '#6688ff');
+
+  window.addEventListener('resize', onResize);
+  animate();
+}
+
+function onResize() {
+  const container = document.getElementById('canvas3d').parentElement;
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  const t = clock.getElapsedTime();
+
+  // Propeller spin
+  propellers.forEach(p => {
+    const speed = p.baseSpeed * (demoAnim ? demoAnim.motorSpeed(p.group.position) : 1);
+    p.group.rotation.y += p.direction * speed * dt;
+  });
+
+  // Auto rotate
+  if (autoRotate && !demoAnim) {
+    drone.rotation.y += 0.3 * dt;
+  }
+
+  // Demo animation
+  if (demoAnim) {
+    demoAnim.update(dt);
+  }
+
+  renderer.render(scene, camera);
+}
+
+function stopAutoCycle() {
+  autoCycleEnabled = false;
+  if (cycleTimer) {
+    clearInterval(cycleTimer);
+    cycleTimer = null;
+  }
+}
+
+function isAutoCycling() {
+  return cycleTimer !== null;
+}
+
+function startAutoCycle() {
+  autoCycleEnabled = true;
+  cycleIndex = 0;
+  if (cycleTimer) clearInterval(cycleTimer);
+  // Start with spin
+  switchToMode('spin');
+  cycleTimer = setInterval(() => {
+    if (!autoCycleEnabled) return;
+    cycleIndex = (cycleIndex + 1) % modes.length;
+    switchToMode(modes[cycleIndex]);
+  }, 3000);
+}
+
+function switchToMode(mode) {
+  switch (mode) {
+    case 'spin':
+      autoRotate = true;
+      demoAnim = null;
+      clearBtnActive();
+      document.getElementById('btn-spin').classList.add('active');
+      drone.rotation.set(0, 0, 0);
+      drone.position.set(0, 0, 0);
+      break;
+    case 'pitch':
+      autoRotate = false;
+      document.getElementById('btn-spin').classList.remove('active');
+      clearBtnActive();
+      document.getElementById('btn-pitch').classList.add('active');
+      drone.rotation.set(0, 0, 0);
+      setupDemoAnim('pitch');
+      break;
+    case 'roll':
+      autoRotate = false;
+      document.getElementById('btn-spin').classList.remove('active');
+      clearBtnActive();
+      document.getElementById('btn-roll').classList.add('active');
+      drone.rotation.set(0, 0, 0);
+      setupDemoAnim('roll');
+      break;
+    case 'yaw':
+      autoRotate = false;
+      document.getElementById('btn-spin').classList.remove('active');
+      clearBtnActive();
+      document.getElementById('btn-yaw').classList.add('active');
+      drone.rotation.set(0, 0, 0);
+      setupDemoAnim('yaw');
+      break;
+  }
+}
+
+function setupDemoAnim(type) {
+  let t = 0;
+  switch (type) {
+    case 'pitch':
+      demoAnim = {
+        update(dt) { t += dt * 1.5; drone.rotation.z = Math.sin(t) * 0.4; drone.position.y = Math.sin(t * 2) * 0.15; },
+        motorSpeed(pos) { return pos.z > 0 ? 0.5 : 1.8; }
+      };
+      break;
+    case 'roll':
+      demoAnim = {
+        update(dt) { t += dt * 1.5; drone.rotation.x = Math.sin(t) * 0.4; drone.position.y = Math.sin(t * 2) * 0.15; },
+        motorSpeed(pos) { return pos.x > 0 ? 0.5 : 1.8; }
+      };
+      break;
+    case 'yaw':
+      demoAnim = {
+        update(dt) { t += dt * 1.2; drone.rotation.y += dt * 0.8; drone.position.y = Math.sin(t) * 0.1; },
+        motorSpeed(pos) { return 1.0; }
+      };
+      break;
+  }
+}
+
+function toggleSpin() {
+  stopAutoCycle();
+  autoRotate = !autoRotate;
+  document.getElementById('btn-spin').classList.toggle('active', autoRotate);
+  if (autoRotate) { demoAnim = null; clearBtnActive(); document.getElementById('btn-spin').classList.add('active'); }
+}
+
+function clearBtnActive() {
+  ['btn-pitch','btn-roll','btn-yaw'].forEach(id => document.getElementById(id).classList.remove('active'));
+}
+
+function resetPose() {
+  stopAutoCycle();
+  demoAnim = null;
+  drone.rotation.set(0, 0, 0);
+  drone.position.set(0, 0, 0);
+  clearBtnActive();
+}
+
+function demoPitch() {
+  stopAutoCycle();
+  switchToMode('pitch');
+}
+
+function demoRoll() {
+  stopAutoCycle();
+  switchToMode('roll');
+}
+
+function demoYaw() {
+  stopAutoCycle();
+  switchToMode('yaw');
+}
+
+// Init - start with auto cycle
+init3D();
+startAutoCycle();
+</script>
+</body>
+</html>

@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>机器人工程基础 - 智能体平台课程</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f5f7;
+      color: #333;
+      line-height: 1.6;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+      padding: 24px 0;
+      color: #fff;
+    }
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .header-info h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .header-info p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 50%, #8B5CF6 100%);
+      padding: 40px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px; right: -100px;
+      width: 300px;
+      height: 300px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -50px; left: -50px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+    }
+    .hero-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .course-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .course-cover {
+      flex: 1;
+      min-width: 300px;
+      max-width: 450px;
+      position: relative;
+      overflow: hidden;
+    }
+    .course-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      min-height: 300px;
+    }
+    .cover-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      color: #fff;
+    }
+    .cover-badge {
+      display: inline-block;
+      background: #534AB7;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .cover-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .course-info {
+      flex: 1.2;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      min-width: 300px;
+    }
+    .course-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    .course-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: #666;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .meta-icon {
+      font-size: 16px;
+    }
+    .course-desc {
+      flex: 1;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+      margin-bottom: 24px;
+    }
+    .course-stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #534AB7;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 2px;
+    }
+    .course-actions {
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(83, 74, 183, 0.3);
+    }
+    .btn-secondary {
+      background: #f5f5f7;
+      color: #534AB7;
+      border: 1px solid #d8d5f6;
+    }
+    .btn-secondary:hover {
+      background: #EEEDFE;
+    }
+
+    /* Features */
+    .features {
+      padding: 48px 0;
+      background: #fff;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    .section-subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 40px;
+    }
+    .features-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: #fafafb;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #EEEDFE 0%, #e8e6fa 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 16px;
+    }
+    .feature-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* Course Outline */
+    .outline {
+      padding: 48px 0;
+      background: #f5f5f7;
+    }
+    .outline-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    .chapter {
+      background: #fff;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+    .chapter-header {
+      display: flex;
+      align-items: center;
+      padding: 20px 24px;
+      cursor: pointer;
+      gap: 16px;
+    }
+    .chapter-header:hover {
+      background: #fafafb;
+    }
+    .chapter-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .chapter-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .chapter-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 2px;
+    }
+    .chapter-meta {
+      font-size: 12px;
+      color: #999;
+    }
+    .chapter-arrow {
+      font-size: 14px;
+      color: #ccc;
+      transition: transform 0.2s;
+    }
+    .chapter.open .chapter-arrow {
+      transform: rotate(90deg);
+    }
+    .chapter-content {
+      display: none;
+      padding: 0 24px 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .chapter.open .chapter-content {
+      display: block;
+    }
+    .lesson-list {
+      list-style: none;
+      padding: 12px 0;
+    }
+    .lesson-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      transition: background 0.15s;
+      justify-content: space-between;
+    }
+    .lesson-item:hover {
+      background: #f5f5f7;
+    }
+    .lesson-item[onclick] {
+      cursor: pointer;
+    }
+    .lesson-left {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+    }
+    .lesson-icon {
+      font-size: 14px;
+      margin-right: 10px;
+      color: #534AB7;
+      flex-shrink: 0;
+    }
+    .lesson-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .lesson-title {
+      font-size: 14px;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lesson-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-left: 16px;
+      flex-shrink: 0;
+    }
+    .lesson-duration {
+      font-size: 12px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .lesson-action {
+      font-size: 13px;
+      color: #534AB7;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Instructor */
+    .instructor {
+      padding: 48px 0;
+      background: #fff;
+    }
+    .instructor-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+    .instructor-avatar {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 40px;
+      margin: 0 auto 16px;
+    }
+    .instructor-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+    .instructor-title {
+      font-size: 14px;
+      color: #534AB7;
+      margin-bottom: 16px;
+    }
+    .instructor-desc {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.8;
+    }
+
+    /* Pricing */
+    .pricing {
+      padding: 48px 0;
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+    }
+    .pricing-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+      text-align: center;
+      color: #fff;
+    }
+    .pricing-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .pricing-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 32px;
+    }
+    .pricing-card {
+      display: inline-block;
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 48px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .price-label {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    .price-value {
+      font-size: 48px;
+      font-weight: 700;
+      color: #534AB7;
+    }
+    .price-currency {
+      font-size: 24px;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+    .price-discount {
+      display: inline-block;
+      background: #ffe5e5;
+      color: #e74c3c;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+    .pricing-btn {
+      margin-top: 24px;
+      background: linear-gradient(135deg, #534AB7 0%, #7F77DD 100%);
+      color: #fff;
+      border: none;
+      padding: 16px 48px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pricing-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    /* Footer */
+    .footer {
+      padding: 32px 0;
+      background: #1a1a1a;
+      color: #999;
+      text-align: center;
+      font-size: 13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .course-card {
+        flex-direction: column;
+      }
+      .course-cover {
+        max-width: 100%;
+      }
+      .course-info {
+        padding: 24px;
+      }
+      .course-title {
+        font-size: 22px;
+      }
+      .course-actions {
+        flex-direction: column;
+      }
+      .price-value {
+        font-size: 36px;
+      }
+      .chapter-header {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">🤖</div>
+      <div class="header-info">
+        <h1>AI课程智能体平台</h1>
+        <p>清华大学 THU-MAIC 团队研发</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="course-card">
+        <div class="course-cover">
+          <img src="robot.jpg" alt="课程封面">
+          <div class="cover-overlay">
+            <span class="cover-badge">精品课程</span>
+            <div class="cover-title">机器人工程基础</div>
+          </div>
+        </div>
+        <div class="course-info">
+          <h2 class="course-title">机器人工程基础：从机构原理到智能控制</h2>
+          <div class="course-meta">
+            <div class="meta-item">
+              <span class="meta-icon">👨‍🏫</span>
+              <span>清华大学教授</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-icon">📅</span>
+              <span>2024年秋季</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-icon">⏱️</span>
+              <span>48课时</span>
+            </div>
+          </div>
+          <p class="course-desc">
+            本课程系统介绍机器人工程的核心原理与实践应用，涵盖机构学基础、运动学分析、动力学建模、智能控制等关键内容。通过理论讲解与仿真实验相结合的方式，帮助学员建立扎实的机器人工程知识体系。
+          </p>
+          <div class="course-stats">
+            <div class="stat-item">
+              <div class="stat-value">12,890</div>
+              <div class="stat-label">学员</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">4.9</div>
+              <div class="stat-label">评分</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">98%</div>
+              <div class="stat-label">好评率</div>
+            </div>
+          </div>
+          <div class="course-actions">
+            <a href="#outline" class="btn btn-secondary">查看大纲</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="features-container">
+      <h2 class="section-title">课程特色</h2>
+      <p class="section-subtitle">为什么选择这门课程</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">体系化学习路径</h3>
+          <p class="feature-desc">从基础到进阶，循序渐进的课程设计，帮助学员系统掌握机器人工程知识</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">交互式仿真实验</h3>
+          <p class="feature-desc">集成OpenMAIC多智能体平台，提供沉浸式互动学习体验</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">👨‍💻</div>
+          <h3 class="feature-title">项目实战驱动</h3>
+          <p class="feature-desc">通过真实工程案例，培养解决实际问题的能力</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏆</div>
+          <h3 class="feature-title">权威认证证书</h3>
+          <p class="feature-desc">完成课程可获得清华大学认证的结业证书</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="outline" id="outline">
+    <div class="outline-container">
+      <h2 class="section-title">课程大纲</h2>
+      <p class="section-subtitle">系统化的知识体系，循序渐进的学习路径</p>
+      
+      <div class="chapter open">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">01</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第一章：机器人工程概述</div>
+            <div class="chapter-meta">4课时 · 入门基础</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item" onclick="location.href='course_1_1.html'">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">1.1 机器人的定义与发展历程</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">15分钟</span>
+                <span class="lesson-action">免费试看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">1.2 机器人的分类与应用领域</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">免费试看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">1.3 机器人工程的核心技术体系</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">25分钟</span>
+                <span class="lesson-action">免费试看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">1.4 课程导论与学习指南</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">10分钟</span>
+                <span class="lesson-action">免费试看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chapter">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">02</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第二章：机构学基础</div>
+            <div class="chapter-meta">8课时 · 核心原理</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.1 机构的基本概念</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.2 机构运动简图</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">25分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.3 平面机构自由度</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">30分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.4 平面连杆机构</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">35分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">🎮</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.5 仿真实验：机构运动分析</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">40分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">2.6 章节测验</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chapter">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">03</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第三章：机器人运动学</div>
+            <div class="chapter-meta">10课时 · 核心原理</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.1 位姿描述与坐标变换</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">30分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.2 齐次变换矩阵</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">35分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.3 正向运动学</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">40分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.4 逆向运动学</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">45分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">🎮</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.5 仿真实验：机器人运动学</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">50分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">3.6 章节测验</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chapter">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">04</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第四章：机器人动力学</div>
+            <div class="chapter-meta">10课时 · 进阶内容</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">4.1 刚体动力学基础</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">30分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">4.2 拉格朗日动力学</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">40分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">4.3 牛顿-欧拉动力学</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">35分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">🎮</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">4.4 仿真实验：动力学分析</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">45分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">4.5 章节测验</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chapter">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">05</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第五章：智能控制</div>
+            <div class="chapter-meta">10课时 · 进阶内容</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.1 经典控制理论</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">35分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.2 PID控制器设计</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">40分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.3 现代控制理论</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">45分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.4 智能控制算法</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">50分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">🎮</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.5 仿真实验：控制器设计</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">50分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">5.6 章节测验</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="chapter">
+        <div class="chapter-header" onclick="toggleChapter(this)">
+          <div class="chapter-icon">06</div>
+          <div class="chapter-info">
+            <div class="chapter-title">第六章：综合项目实践</div>
+            <div class="chapter-meta">6课时 · 实战项目</div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+        <div class="chapter-content">
+          <ul class="lesson-list">
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">6.1 项目概述与需求分析</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">20分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📹</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">6.2 机器人系统设计</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">30分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">🎮</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">6.3 项目实战：完整机器人系统</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">60分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+            <li class="lesson-item">
+              <div class="lesson-left">
+                <span class="lesson-icon">📝</span>
+                <div class="lesson-info">
+                  <div class="lesson-title">6.4 课程总结与结业考核</div>
+                </div>
+              </div>
+              <div class="lesson-right">
+                <span class="lesson-duration">30分钟</span>
+                <span class="lesson-action">查看</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="instructor">
+    <div class="instructor-container">
+      <h2 class="section-title">授课讲师</h2>
+      <p class="section-subtitle">资深专家带你深入学习</p>
+      <div class="instructor-avatar">👨‍🏫</div>
+      <h3 class="instructor-name">张明远 教授</h3>
+      <p class="instructor-title">清华大学自动化系教授、博士生导师</p>
+      <p class="instructor-desc">
+        张教授长期从事机器人工程与智能控制领域的教学与研究工作，拥有20余年的教学经验。他主持了多项国家级科研项目，发表学术论文100余篇，曾获得国家级教学成果奖。张教授的课程以深入浅出、理论联系实际著称，深受学生好评。
+      </p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© 2024 AI课程智能体平台 - 清华大学 THU-MAIC 团队研发</p>
+  </footer>
+
+  <script>
+    function toggleChapter(element) {
+      const chapter = element.parentElement;
+      chapter.classList.toggle('open');
+    }
+  </script>
+</body>
+</html>

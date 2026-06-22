@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>知识图谱 — 机械原理</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: linear-gradient(135deg, #f8f7ff 0%, #f0f4ff 100%);
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mindmap-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mindmap-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Node Styles */
+    .node {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .node-center circle {
+      fill: url(#centerGradient);
+      stroke: #3C3489;
+      stroke-width: 3;
+      filter: drop-shadow(0 8px 20px rgba(83, 74, 183, 0.4));
+    }
+
+    .node-center text {
+      fill: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .node-level1 circle {
+      fill: url(#level1Gradient);
+      stroke: #534AB7;
+      stroke-width: 2;
+      filter: drop-shadow(0 4px 12px rgba(83, 74, 183, 0.25));
+    }
+
+    .node-level1 text {
+      fill: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .node-level2 circle {
+      fill: #fff;
+      stroke: #7F77DD;
+      stroke-width: 2;
+      filter: drop-shadow(0 2px 8px rgba(127, 119, 221, 0.2));
+    }
+
+    .node-level2 text {
+      fill: #444;
+      font-size: 12px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .node-level3 circle {
+      fill: #EEEDFE;
+      stroke: #A8A0F0;
+      stroke-width: 1.5;
+    }
+
+    .node-level3 text {
+      fill: #555;
+      font-size: 11px;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    .node:hover circle {
+      stroke-width: 3;
+      filter: drop-shadow(0 6px 20px rgba(83, 74, 183, 0.4));
+    }
+
+    .node.selected circle {
+      stroke-width: 4;
+      stroke: #FF6B6B;
+    }
+
+    /* Connection Lines */
+    .connection {
+      stroke: #D8D5F6;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .connection-level1 {
+      stroke: #7F77DD;
+      stroke-width: 3;
+    }
+
+    .connection-level2 {
+      stroke: #A8A0F0;
+      stroke-width: 2;
+    }
+
+    .connection-level3 {
+      stroke: #D8D5F6;
+      stroke-width: 1.5;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid #d8d5f6;
+      border-radius: 12px;
+      padding: 12px 16px;
+      max-width: 320px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      display: none;
+      pointer-events: none;
+    }
+
+    .tooltip.visible {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tooltip-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3C3489;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tooltip-content {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .tooltip-content strong {
+      color: #534AB7;
+    }
+
+    .tooltip-content .formula {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: "Times New Roman", serif;
+      font-weight: 600;
+      margin: 2px 0;
+    }
+
+    .tooltip-tips {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .tooltip-tips .tips-icon {
+      font-size: 14px;
+    }
+
+    .tooltip-tips .tips-content {
+      font-size: 11px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="mindmap-container">
+    <svg class="mindmap-svg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#7F77DD" />
+          <stop offset="100%" stop-color="#3C3489" />
+        </radialGradient>
+        <radialGradient id="level1Gradient" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#534AB7" />
+          <stop offset="100%" stop-color="#43389E" />
+        </radialGradient>
+      </defs>
+
+      <!-- Center Node -->
+      <g class="node node-center" transform="translate(500, 400)" data-node-type="center">
+        <circle r="38" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:13px;">
+          <tspan x="0" dy="-6">机械原理</tspan>
+          <tspan x="0" dy="14">机构分析与设计</tspan>
+        </text>
+      </g>
+
+      <!-- Level 1 Nodes -->
+      <!-- Node 1: 机构简图与自由度 -->
+      <g class="node node-level1" transform="translate(290, 255)" data-node-type="level1" data-section="0">
+        <circle r="28" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:11px;">
+          <tspan x="0" dy="-6">机构简图</tspan>
+          <tspan x="0" dy="13">与自由度</tspan>
+        </text>
+      </g>
+      <path class="connection connection-level1" d="M 475 370 Q 340 280 318 275" />
+
+      <!-- Node 2: 运动特性与工程模拟 -->
+      <g class="node node-level1" transform="translate(710, 255)" data-node-type="level1" data-section="1">
+        <circle r="28" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:11px;">
+          <tspan x="0" dy="-6">运动特性</tspan>
+          <tspan x="0" dy="13">与工程模拟</tspan>
+        </text>
+      </g>
+      <path class="connection connection-level1" d="M 525 370 Q 660 280 682 275" />
+
+      <!-- Node 3: 案例与设计思维 -->
+      <g class="node node-level1" transform="translate(290, 545)" data-node-type="level1" data-section="2">
+        <circle r="28" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:11px;">
+          <tspan x="0" dy="-6">案例与</tspan>
+          <tspan x="0" dy="13">设计思维</tspan>
+        </text>
+      </g>
+      <path class="connection connection-level1" d="M 475 430 Q 340 520 318 525" />
+
+      <!-- Node 4: 课堂测验与延伸 -->
+      <g class="node node-level1" transform="translate(710, 545)" data-node-type="level1" data-section="3">
+        <circle r="28" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:11px;">
+          <tspan x="0" dy="-6">课堂测验</tspan>
+          <tspan x="0" dy="13">与延伸</tspan>
+        </text>
+      </g>
+      <path class="connection connection-level1" d="M 525 430 Q 660 520 682 525" />
+
+      <!-- Level 2 Nodes -->
+      <!-- 1.1 机构运动简图 -->
+      <g class="node node-level2" transform="translate(170, 195)" data-node-type="level2" data-parent="0" data-subsection="0">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">机构运动简图</text>
+      </g>
+      <path class="connection connection-level2" d="M 275 240 Q 200 210 190 205" />
+
+      <!-- 1.2 自由度计算 -->
+      <g class="node node-level2" transform="translate(170, 315)" data-node-type="level2" data-parent="0" data-subsection="1">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">自由度计算</text>
+      </g>
+      <path class="connection connection-level2" d="M 275 270 Q 200 300 190 305" />
+
+      <!-- 2.1 急回特性 -->
+      <g class="node node-level2" transform="translate(830, 195)" data-node-type="level2" data-parent="1" data-subsection="0">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">急回特性</text>
+      </g>
+      <path class="connection connection-level2" d="M 725 240 Q 800 210 810 205" />
+
+      <!-- 2.2 压力角与传动角 -->
+      <g class="node node-level2" transform="translate(830, 315)" data-node-type="level2" data-parent="1" data-subsection="1">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">压力角与传动角</text>
+      </g>
+      <path class="connection connection-level2" d="M 725 270 Q 800 300 810 305" />
+
+      <!-- 3.1 死点位置 -->
+      <g class="node node-level2" transform="translate(170, 485)" data-node-type="level2" data-parent="2" data-subsection="0">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">死点位置</text>
+      </g>
+      <path class="connection connection-level2" d="M 275 530 Q 200 500 190 495" />
+
+      <!-- 3.2 失败案例诊断 -->
+      <g class="node node-level2" transform="translate(170, 605)" data-node-type="level2" data-parent="2" data-subsection="1">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">失败案例诊断</text>
+      </g>
+      <path class="connection connection-level2" d="M 275 560 Q 200 590 190 595" />
+
+      <!-- 3.3 生活实例 -->
+      <g class="node node-level2" transform="translate(290, 665)" data-node-type="level2" data-parent="2" data-subsection="2">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">生活实例</text>
+      </g>
+      <path class="connection connection-level2" d="M 305 560 Q 290 620 290 645" />
+
+      <!-- 4.1 后测常见题型 -->
+      <g class="node node-level2" transform="translate(830, 485)" data-node-type="level2" data-parent="3" data-subsection="0">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">后测常见题型</text>
+      </g>
+      <path class="connection connection-level2" d="M 725 530 Q 800 500 810 495" />
+
+      <!-- 4.2 分层作业 -->
+      <g class="node node-level2" transform="translate(830, 605)" data-node-type="level2" data-parent="3" data-subsection="1">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">分层作业</text>
+      </g>
+      <path class="connection connection-level2" d="M 725 560 Q 800 590 810 595" />
+
+      <!-- 4.3 下节课预告 -->
+      <g class="node node-level2" transform="translate(710, 665)" data-node-type="level2" data-parent="3" data-subsection="2">
+        <circle r="20" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:10px;">下节课预告</text>
+      </g>
+      <path class="connection connection-level2" d="M 695 560 Q 710 620 710 645" />
+
+      <!-- Level 3 Nodes -->
+      <!-- 1.1.1 构件分类 -->
+      <g class="node node-level3" transform="translate(100, 155)" data-node-type="level3" data-parent="0-0" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">构件分类</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 185 Q 120 165 114 160" />
+
+      <!-- 1.1.2 运动副类型 -->
+      <g class="node node-level3" transform="translate(100, 235)" data-node-type="level3" data-parent="0-0" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">运动副类型</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 205 Q 120 225 114 230" />
+
+      <!-- 1.1.3 绘制步骤 -->
+      <g class="node node-level3" transform="translate(210, 150)" data-node-type="level3" data-parent="0-0" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">绘制步骤</text>
+      </g>
+      <path class="connection connection-level3" d="M 185 190 Q 200 165 204 158" />
+
+      <!-- 1.2.1 自由度公式 -->
+      <g class="node node-level3" transform="translate(100, 275)" data-node-type="level3" data-parent="0-1" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">自由度公式</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 305 Q 120 285 114 280" />
+
+      <!-- 1.2.2 自由度意义 -->
+      <g class="node node-level3" transform="translate(100, 355)" data-node-type="level3" data-parent="0-1" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">自由度意义</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 325 Q 120 345 114 350" />
+
+      <!-- 1.2.3 常见错误 -->
+      <g class="node node-level3" transform="translate(230, 320)" data-node-type="level3" data-parent="0-1" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">常见错误</text>
+      </g>
+      <path class="connection connection-level3" d="M 185 310 Q 210 315 216 318" />
+
+      <!-- 2.1.1 急回原理 -->
+      <g class="node node-level3" transform="translate(900, 155)" data-node-type="level3" data-parent="1-0" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">急回原理</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 185 Q 880 165 886 160" />
+
+      <!-- 2.1.2 行程速比系数 -->
+      <g class="node node-level3" transform="translate(900, 235)" data-node-type="level3" data-parent="1-0" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">行程速比系数</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 205 Q 880 225 886 230" />
+
+      <!-- 2.2.1 基本概念 -->
+      <g class="node node-level3" transform="translate(900, 275)" data-node-type="level3" data-parent="1-1" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">基本概念</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 305 Q 880 285 886 280" />
+
+      <!-- 2.2.2 设计要求 -->
+      <g class="node node-level3" transform="translate(900, 355)" data-node-type="level3" data-parent="1-1" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">设计要求</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 325 Q 880 345 886 350" />
+
+      <!-- 3.1.1 死点定义 -->
+      <g class="node node-level3" transform="translate(100, 445)" data-node-type="level3" data-parent="2-0" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">死点定义</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 475 Q 120 455 114 450" />
+
+      <!-- 3.1.2 克服方法 -->
+      <g class="node node-level3" transform="translate(100, 525)" data-node-type="level3" data-parent="2-0" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">克服方法</text>
+      </g>
+      <path class="connection connection-level3" d="M 160 495 Q 120 515 114 520" />
+
+      <!-- 3.1.3 死点利用 -->
+      <g class="node node-level3" transform="translate(230, 490)" data-node-type="level3" data-parent="2-0" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">死点利用</text>
+      </g>
+      <path class="connection connection-level3" d="M 185 480 Q 210 485 216 488" />
+
+      <!-- 3.3.1 缝纫机踏板 -->
+      <g class="node node-level3" transform="translate(200, 690)" data-node-type="level3" data-parent="2-2" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">缝纫机踏板</text>
+      </g>
+      <path class="connection connection-level3" d="M 280 670 Q 240 685 214 688" />
+
+      <!-- 3.3.2 雨刮器 -->
+      <g class="node node-level3" transform="translate(320, 690)" data-node-type="level3" data-parent="2-2" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">雨刮器</text>
+      </g>
+      <path class="connection connection-level3" d="M 300 670 Q 310 685 314 688" />
+
+      <!-- 3.3.3 内燃机 -->
+      <g class="node node-level3" transform="translate(380, 690)" data-node-type="level3" data-parent="2-2" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">内燃机</text>
+      </g>
+      <path class="connection connection-level3" d="M 305 670 Q 340 685 366 688" />
+
+      <!-- 4.1.1 自由度计算 -->
+      <g class="node node-level3" transform="translate(900, 445)" data-node-type="level3" data-parent="3-0" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">自由度计算</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 475 Q 880 455 886 450" />
+
+      <!-- 4.1.2 急回特性判断 -->
+      <g class="node node-level3" transform="translate(900, 525)" data-node-type="level3" data-parent="3-0" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">急回特性判断</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 495 Q 880 515 886 520" />
+
+      <!-- 4.1.3 压力角分析 -->
+      <g class="node node-level3" transform="translate(770, 490)" data-node-type="level3" data-parent="3-0" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">压力角分析</text>
+      </g>
+      <path class="connection connection-level3" d="M 815 480 Q 790 485 784 488" />
+
+      <!-- 4.2.1 基础层 -->
+      <g class="node node-level3" transform="translate(770, 630)" data-node-type="level3" data-parent="3-1" data-detail="0">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">基础层</text>
+      </g>
+      <path class="connection connection-level3" d="M 815 605 Q 790 618 784 622" />
+
+      <!-- 4.2.2 提高层 -->
+      <g class="node node-level3" transform="translate(840, 690)" data-node-type="level3" data-parent="3-1" data-detail="1">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">提高层</text>
+      </g>
+      <path class="connection connection-level3" d="M 840 625 Q 840 660 840 676" />
+
+      <!-- 4.2.3 拓展层 -->
+      <g class="node node-level3" transform="translate(900, 690)" data-node-type="level3" data-parent="3-1" data-detail="2">
+        <circle r="14" style="cursor:pointer;" />
+        <text style="cursor:pointer;font-size:9px;">拓展层</text>
+      </g>
+      <path class="connection connection-level3" d="M 845 625 Q 870 660 886 676" />
+    </svg>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <script>
+    // Node Data
+    const nodeData = {
+      center: {
+        title: '机械原理 — 机构分析与设计基础',
+        content: '本课程核心知识体系，涵盖机构简图、自由度计算、运动特性分析及工程应用',
+        tips: '从机构学基本原理出发，逐步深入理解机械系统的设计与分析方法'
+      },
+      level1: [
+        {
+          title: '机构简图与自由度',
+          content: '研究机构的组成、表示方法及运动可能性判断',
+          tips: '这是机构分析的基础，必须熟练掌握'
+        },
+        {
+          title: '运动特性与工程模拟',
+          content: '分析机构的运动特性，包括急回特性、压力角等关键参数',
+          tips: '运动特性直接影响机构的性能和效率'
+        },
+        {
+          title: '案例与设计思维',
+          content: '通过实际案例理解机构设计原理，培养工程思维',
+          tips: '理论联系实际，从案例中学习设计方法'
+        },
+        {
+          title: '课堂测验与延伸',
+          content: '巩固所学知识，进行分层练习和拓展学习',
+          tips: '通过测验检验学习效果，拓展知识面'
+        }
+      ],
+      level2: {
+        '0-0': { title: '机构运动简图', content: '用规定符号表示机构的组成和运动关系', tips: '绘制简图是工程师的基本技能' },
+        '0-1': { title: '自由度计算', content: '计算机构的自由度数，判断运动可能性', tips: '记住公式 F = 3n - 2Pₗ - Pₕ' },
+        '1-0': { title: '急回特性', content: '机构工作行程与空回行程的速度差异', tips: '急回特性可提高机械效率' },
+        '1-1': { title: '压力角与传动角', content: '衡量机构传力性能的重要指标', tips: '压力角越小，传力性能越好' },
+        '2-0': { title: '死点位置', content: '从动件驱动力通过回转中心的位置', tips: '死点位置需要特殊处理' },
+        '2-1': { title: '失败案例诊断', content: '分析机构设计失败的原因并提出改进方案', tips: '从失败中学习是重要的工程能力' },
+        '2-2': { title: '生活实例', content: '日常生活中的机构应用案例', tips: '观察生活，发现机械原理的应用' },
+        '3-0': { title: '后测常见题型', content: '课程结束后的典型测试题目', tips: '熟悉题型有助于提高成绩' },
+        '3-1': { title: '分层作业', content: '针对不同水平学生设计的作业', tips: '根据自身情况选择合适难度' },
+        '3-2': { title: '下节课预告', content: '下节课将要学习的内容', tips: '提前预习可以提高学习效率' }
+      },
+      level3: {
+        '0-0-0': { title: '构件分类', content: '<strong>机架</strong>：固定不动的构件<br><strong>原动件</strong>：输入运动的主动构件<br><strong>从动件</strong>：随原动件运动的输出构件', tips: '机架是"舞台"，原动件是"演员"，从动件是"配角"' },
+        '0-0-1': { title: '运动副类型', content: '<strong>低副（面接触）</strong>：转动副、移动副<br><strong>高副（点/线接触）</strong>：凸轮副、齿轮副', tips: '低副承载能力强，高副运动形式多样' },
+        '0-0-2': { title: '绘制步骤', content: '① 确定机架 → ② 找运动副 → ③ 画简图符号 → ④ 标尺寸/角度', tips: '关键是抓住"构件-运动副"这两个核心要素' },
+        '0-1-0': { title: '自由度公式', content: '<span class="formula">F = 3n - 2Pₗ - Pₕ</span><br><strong>n</strong>：活动构件数（不含机架）<br><strong>Pₗ</strong>：低副数<br><strong>Pₕ</strong>：高副数', tips: '记住公式结构：3倍构件数 - 2倍低副 - 高副' },
+        '0-1-1': { title: '自由度意义', content: '<strong>F > 0</strong>：机构能运动<br><strong>F = 0</strong>：静定结构<br><strong>F < 0</strong>：超静定（过约束）', tips: '设计机构时通常要求 F = 1，便于控制' },
+        '0-1-2': { title: '常见错误', content: '<strong>局部自由度</strong>：凸轮滚子自转（应去除）<br><strong>虚约束</strong>：重复约束<br><strong>复合铰链</strong>：k个构件汇交→计k-1个转动副', tips: '遇到滚子先检查局部自由度' },
+        '1-0-0': { title: '急回原理', content: '工作行程慢（受力）、空回行程快（省力），提高效率', tips: '急回特性是曲柄摇杆机构的重要特性' },
+        '1-0-1': { title: '行程速比系数', content: '<span class="formula">K = v空回 / v工作</span><br>K > 1 表示有急回特性', tips: '牛头刨床就是利用急回特性提高切削效率' },
+        '1-1-0': { title: '基本概念', content: '<strong>压力角 α</strong>：力方向与速度方向的夹角<br><strong>传动角 γ</strong>：γ = 90° - α', tips: '压力角越小越好，传动角越大越好' },
+        '1-1-1': { title: '设计要求', content: 'α ≤ [α]（一般30°~40°），γ ≥ 40°', tips: '最小传动角出现在曲柄与机架共线位置' },
+        '2-0-0': { title: '死点定义', content: '从动件驱动力通过回转中心，传动角 γ = 0°，机构卡死', tips: '死点出现在连杆与从动件共线位置' },
+        '2-0-1': { title: '克服方法', content: '• 利用惯性（飞轮）<br>• 多组机构错位布置<br>• 增加辅助机构', tips: '缝纫机踏板就是利用皮带轮惯性度过死点' },
+        '2-0-2': { title: '死点利用', content: '飞机起落架、夹具、折叠椅（利用死点自锁）', tips: '死点不一定是坏事，有时可以利用它' },
+        '2-2-0': { title: '缝纫机踏板', content: '曲柄摇杆机构，踏板是摇杆，皮带轮利用惯性过死点', tips: '观察家里的缝纫机，理解死点克服原理' },
+        '2-2-1': { title: '雨刮器', content: '曲柄摇杆机构，电机驱动曲柄带动雨刮摆动', tips: '注意观察雨刮的往复运动规律' },
+        '2-2-2': { title: '内燃机', content: '曲柄滑块机构，活塞（滑块）带动曲轴（曲柄）旋转', tips: '汽车发动机就是典型的曲柄滑块机构' },
+        '3-0-0': { title: '自由度计算', content: '给定机构简图，计算自由度并判断是否有多余约束', tips: '解题步骤：数构件→数运动副→代入公式' },
+        '3-0-1': { title: '急回特性判断', content: '根据机构尺寸判断是否有急回特性，计算行程速比系数K', tips: '有极位夹角θ就有急回，θ越大K越大' },
+        '3-0-2': { title: '压力角分析', content: '找出最大/最小压力角位置，判断是否满足设计要求', tips: '最小传动角出现在曲柄与机架共线位置' },
+        '3-1-0': { title: '基础层', content: '课本简图绘制 + 自由度计算（必做）', tips: '打好基础是关键，熟练掌握基本计算' },
+        '3-1-1': { title: '提高层', content: '给定运动要求，设计四杆机构尺寸', tips: '需要综合运用曲柄存在条件、传动角等知识' },
+        '3-1-2': { title: '拓展层', content: '用 Adams/MATLAB 仿真验证压力角变化', tips: '理论与实践结合，加深理解' }
+      }
+    };
+
+    // Tooltip Handling
+    const tooltip = document.getElementById('tooltip');
+
+    function showTooltip(e) {
+      const node = e.target.closest('.node');
+      if (!node) return;
+
+      const nodeType = node.dataset.nodeType;
+      let data = null;
+
+      if (nodeType === 'center') {
+        data = nodeData.center;
+      } else if (nodeType === 'level1') {
+        const section = parseInt(node.dataset.section);
+        data = nodeData.level1[section];
+      } else if (nodeType === 'level2') {
+        const key = node.dataset.parent + '-' + node.dataset.subsection;
+        data = nodeData.level2[key];
+      } else if (nodeType === 'level3') {
+        const key = node.dataset.parent + '-' + node.dataset.detail;
+        data = nodeData.level3[key];
+      }
+
+      if (!data) return;
+
+      tooltip.innerHTML = `
+        <div class="tooltip-title">📌 ${data.title}</div>
+        <div class="tooltip-content">${data.content}</div>
+        <div class="tooltip-tips">
+          <span class="tips-icon">💡</span>
+          <span class="tips-content">${data.tips}</span>
+        </div>
+      `;
+
+      tooltip.classList.add('visible');
+      updateTooltipPosition(e);
+    }
+
+    function updateTooltipPosition(e) {
+      let x = e.clientX + 15;
+      let y = e.clientY + 15;
+
+      if (x + tooltip.offsetWidth > window.innerWidth) {
+        x = e.clientX - tooltip.offsetWidth - 15;
+      }
+      if (y + tooltip.offsetHeight > window.innerHeight) {
+        y = e.clientY - tooltip.offsetHeight - 15;
+      }
+
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove('visible');
+    }
+
+    function handleCenterClick() {
+      const svg = document.querySelector('.mindmap-svg');
+      if (svg) {
+        svg.querySelectorAll('.node-level1 circle').forEach(el => {
+          el.setAttribute('stroke', '#FF6B6B');
+          el.setAttribute('stroke-width', '4');
+          setTimeout(() => {
+            el.setAttribute('stroke', '#534AB7');
+            el.setAttribute('stroke-width', '2');
+          }, 2000);
+        });
+      }
+    }
+
+    function handleNodeClick(e) {
+      e.stopPropagation();
+      const node = e.target.closest('.node');
+      if (!node) return;
+
+      const nodeType = node.dataset.nodeType;
+      if (nodeType === 'center') {
+        handleCenterClick();
+      }
+    }
+
+    function bindNodeEvents() {
+      const svg = document.querySelector('.mindmap-svg');
+      if (!svg) return;
+
+      const nodes = svg.querySelectorAll('.node circle, .node text');
+      nodes.forEach(el => {
+        el.style.cursor = 'pointer';
+        el.addEventListener('mouseenter', showTooltip);
+        el.addEventListener('mousemove', updateTooltipPosition);
+        el.addEventListener('mouseleave', hideTooltip);
+        el.addEventListener('click', handleNodeClick);
+      });
+    }
+
+    setTimeout(bindNodeEvents, 100);
+  </script>
+</body>
+</html
