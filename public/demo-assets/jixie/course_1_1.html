@@ -1,0 +1,605 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>璇剧▼ 1.1 鈥?鏈哄櫒浜哄伐绋嬪熀纭€</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f5f7;
+      color: #333;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .topbar {
+      height: 44px;
+      background: #fff;
+      border-bottom: 0.5px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .topbar .back-btn {
+      color: #534AB7;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+    .topbar .title { font-size: 14px; font-weight: 500; color: #333; }
+
+    .main-layout { display: flex; height: calc(100vh - 44px); }
+
+    /* Left Panel */
+    .left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #000;
+    }
+    .left-panel iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      display: block;
+      min-height: 0;
+    }
+
+    /* Left controls and content area */
+    .left-controls {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-top: 0.5px solid rgba(83, 74, 183, 0.3);
+      padding: 12px 16px;
+    }
+
+    /* Content and buttons wrapper */
+    .content-wrapper {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Content area with teacher info */
+    .content-area {
+      flex: 1;
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 0.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 72px;
+    }
+    .teacher-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+    .content-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .content-box::-webkit-scrollbar { width: 3px; }
+    .content-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
+    .teacher-name {
+      font-size: 11px;
+      color: #a59eff;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .content-text {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.95);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .content-text strong { color: #a59eff; }
+
+    /* Button column - on the right, vertical layout */
+    .btn-column {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 90px;
+    }
+    .ctrl-btn {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 0.5px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      padding: 7px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #fff;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover:not(:disabled) {
+      background: rgba(83, 74, 183, 0.8);
+      border-color: #534AB7;
+    }
+    .ctrl-btn.primary {
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      border-color: transparent;
+    }
+    .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Right: Pure Chat Panel */
+    .chat-panel {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      flex-shrink: 0;
+      border-left: 0.5px solid #e0e0e0;
+    }
+    .chat-header {
+      padding: 12px 16px;
+      border-bottom: 0.5px solid #eee;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chat-header .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+    /* Message styles */
+    .msg { max-width: 100%; }
+    .msg.user {
+      align-self: flex-end;
+      background: #EEEDFE;
+      border: 0.5px solid #d8d5f6;
+      border-radius: 12px 12px 4px 12px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #3C3489;
+      word-break: break-word;
+      max-width: 85%;
+    }
+    .msg.ai { align-self: flex-start; max-width: 85%; }
+    .msg.ai .msg-label {
+      font-size: 11px;
+      color: #7F77DD;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    .msg.ai .msg-body {
+      font-size: 13px;
+      line-height: 1.7;
+      color: #555;
+      background: #f7f5ff;
+      border: 0.5px solid #e0ddf5;
+      border-radius: 12px 12px 12px 4px;
+      padding: 11px 13px;
+      word-break: break-word;
+    }
+    .msg.ai .msg-body strong { color: #333; font-weight: 500; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 10px 14px;
+      background: #f7f5ff;
+      border: 0.5px solid #e0ddf5;
+      border-radius: 12px 12px 12px 4px;
+    }
+    .typing-indicator span {
+      width: 5px;
+      height: 5px;
+      background: #534AB7;
+      border-radius: 50%;
+      animation: typing-bounce 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0s; }
+    @keyframes typing-bounce {
+      0%,80%,100% { transform:scale(0.6); opacity:0.5; }
+      40% { transform:scale(1); opacity:1; }
+    }
+
+    /* Chat input area */
+    .chat-input-area {
+      padding: 10px 14px 12px;
+      border-top: 0.5px solid #eee;
+      background: #fff;
+      display: flex;
+      gap: 8px;
+    }
+    .chat-input-area input {
+      flex: 1;
+      padding: 9px 13px;
+      border: 0.5px solid #ddd;
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .chat-input-area input:focus { border-color: #534AB7; }
+    .chat-input-area button {
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .chat-input-area button:hover { opacity: 0.9; }
+
+    @media (max-width: 800px) { .chat-panel { width: 340px; } }
+    @media (max-width: 600px) {
+      .main-layout { flex-direction: column; }
+      .left-panel { height: 50vh; }
+      .chat-panel { width: 100%; height: 50vh; border-left: none; border-top: 0.5px solid #e0e0e0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="back-btn" onclick="return false">鈫?杩斿洖璇剧▼</button>
+    <span class="title">鏈哄櫒浜哄伐绋嬪熀纭€ 路 1.1 鏈哄櫒浜哄伐绋嬫杩?/span>
+  </div>
+
+  <div class="main-layout">
+    <!-- Left: Iframe + Content Box + Controls -->
+    <div class="left-panel">
+      <iframe src="http://pub.qianma.cc/webgl/posuiji/index.html" allowfullscreen loading="lazy"></iframe>
+      
+      <div class="left-controls">
+        <div class="content-wrapper">
+          <div class="content-area">
+            <div class="teacher-avatar">寮?/div>
+            <div class="content-box">
+              <div class="teacher-name">寮犺€佸笀</div>
+              <div class="content-text" id="contentText">鐐瑰嚮鍙充晶銆屽紑濮嬭瑙ｃ€嶆寜閽紑濮嬪涔?/div>
+            </div>
+          </div>
+          
+          <div class="btn-column">
+            <button class="ctrl-btn primary" id="startBtn" onclick="startLecture()">
+              <span>鈻?/span><span id="startBtnText">寮€濮嬭瑙?/span>
+            </button>
+            <button class="ctrl-btn" id="speechBtn" onclick="toggleSpeech()">
+              <span>馃攰</span><span id="speechBtnText">璇煶鏈楄</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Pure Chat Panel (only for user questions) -->
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div class="avatar">AI</div>
+        <span>AI 鍔╂墜</span>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg ai">
+          <div class="msg-label">AI 鍔╂墜</div>
+          <div class="msg-body">鎮ㄥソ锛佹垜鏄偍鐨凙I鍔╂墜銆傛湁浠讳綍闂鍙互鍦ㄨ繖閲屾彁闂€?/div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="杈撳叆鎮ㄧ殑闂..." onkeyup="handleKeyup(event)" />
+        <button onclick="sendQuestion()">鍙戦€?/button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const lectureContent = [
+  '鍚屽浠ソ锛佹杩庢潵鍒般€婃満鍣ㄤ汉宸ョ▼鍩虹銆嬭绋嬨€?,
+  '浠庤癁鐢熻嚦浠婏紝鏈哄櫒浜哄凡缁忓箍娉涙笚閫忓埌浜虹被绀句細鐨勬柟鏂归潰闈細鍦ㄦ苯杞﹀伐鍘傞噷锛屽伐涓氭満鍣ㄤ汉浠ヤ簹姣背绾х殑绮惧害鏄煎涓嶅仠鍦扮剨鎺ャ€佸柗娑傦紱鍦ㄥ尰闄㈡墜鏈涓紝杈捐姮濂囨墜鏈満鍣ㄤ汉閫氳繃鍑犲帢绫崇殑鍒囧彛瀹屾垚澶嶆潅鎿嶄綔锛涘湪鍜变滑瀹堕噷锛屾壂鍦版満鍣ㄤ汉榛橀粯娓呮壂鐫€鍦版澘锛涚敋鑷冲湪鏁颁嚎鍏噷澶栫殑鐏槦涓婏紝姣呭姏鍙风伀鏄熻溅杩樺湪閲囬泦宀╃煶鏍锋湰銆?,
+  '鍦ㄥ紑濮嬩粖澶╃殑瀛︿範涔嬪墠锛岃鎴戝厛绠€鍗曚粙缁嶄竴涓嬭繖闂ㄨ绋嬬殑鏍稿績鍐呭銆?,
+  '涓轰粈涔堣瀛︿範鏈哄櫒浜哄伐绋嬶紵鏈哄櫒浜烘鍦ㄦ繁鍒绘敼鍙樻垜浠殑涓栫晫锛屼粠宸ヤ笟鑷姩鍖栧埌鏅鸿兘瀹跺眳锛屼粠鍖荤枟杈呭姪鍒板お绌烘帰绱紝鏈哄櫒浜烘妧鏈棤澶勪笉鍦ㄣ€?,
+  '浠€涔堟槸鏈哄櫒浜猴紵绠€鍗曟潵璇达紝鏈哄櫒浜烘槸涓€绉嶈兘澶熸劅鐭ョ幆澧冦€佸仛鍑哄喅绛栧苟鎵ц鍔ㄤ綔鐨勮嚜鍔ㄥ寲鏈烘绯荤粺銆傚畠閫氬父鐢卞洓澶ф牳蹇冮儴鍒嗙粍鎴愶細浼犳劅鍣ㄣ€佹帶鍒跺櫒銆佹墽琛屽櫒鍜屾満姊扮粨鏋勩€?,
+  '璁╂垜浠洖椤句竴涓嬫満鍣ㄤ汉鐨勫彂灞曞巻绋嬶細1961骞达紝绗竴鍙板伐涓氭満鍣ㄤ汉Unimate姝ｅ紡鎶曞叆浣跨敤锛?980骞翠唬锛屽伐涓氭満鍣ㄤ汉澶ц妯″簲鐢ㄤ簬姹借溅鍒堕€犱笟锛?000骞翠唬锛屾湇鍔℃満鍣ㄤ汉寮€濮嬭蛋杩涘ぇ浼楃敓娲伙紱濡備粖锛孉I涓庢満鍣ㄤ汉娣卞害铻嶅悎锛屽紑鍚簡鏅鸿兘鏈哄櫒浜烘椂浠ｃ€?,
+  '鏈绋嬩綋绯绘瑙堬細1. 鏈烘瀯瀛﹀熀纭€ 鈥?鐞嗚В鏈哄櫒浜虹殑"韬綋"锛?. 杩愬姩瀛﹀垎鏋?鈥?鐮旂┒浣嶇疆涓庡Э鎬佺殑鏁板鎻忚堪锛?. 鍔ㄥ姏瀛﹀缓妯?鈥?鍒嗘瀽鍔涗笌杩愬姩鐨勫叧绯伙紱4. 鏅鸿兘鎺у埗 鈥?璁╂満鍣ㄤ汉"浼氭€濊€?銆?,
+  '鏈€鍚庣粰澶у涓夌偣瀛︿範寤鸿锛氱涓€锛岀悊璁轰笌瀹炶返骞堕噸锛屽姩鎵嬫搷浣滄槸鍏抽敭锛涚浜岋紝鎵撳ソ鏁板鍩虹锛屾満鍣ㄤ汉宸ョ▼绂讳笉寮€绾挎€т唬鏁板拰鍔涘锛涚涓夛紝淇濇寔濂藉蹇冿紝涓诲姩鎺㈢储鍓嶆部鎶€鏈€?,
+  '濂界殑锛屾杩伴儴鍒嗗氨鍒拌繖閲屻€傚鏋滄偍鏈変换浣曢棶棰橈紝鍙互闅忔椂鍦ㄥ彸渚ц亰澶╂涓彁闂紒'
+  
+   
+];
+
+const aiResponses = {
+  '鏈哄櫒浜?: '鏈哄櫒浜烘槸涓€绉嶈兘澶熸劅鐭ョ幆澧冦€佸仛鍑哄喅绛栧苟鎵ц鍔ㄤ綔鐨勮嚜鍔ㄥ寲鏈烘绯荤粺銆傚畠閫氬父鐢变紶鎰熷櫒銆佹帶鍒跺櫒銆佹墽琛屽櫒鍜屾満姊扮粨鏋勫洓涓牳蹇冮儴鍒嗙粍鎴愩€?,
+  '鍙戝睍鍘嗙▼': '鏈哄櫒浜虹殑鍙戝睍鍙互鍒嗕负鍑犱釜闃舵锛?961骞寸涓€鍙板伐涓氭満鍣ㄤ汉璇炵敓锛?980骞翠唬宸ヤ笟鏈哄櫒浜烘櫘鍙婏紝2000骞翠唬鏈嶅姟鏈哄櫒浜哄叴璧凤紝鐜板湪鏄疉I涓庢満鍣ㄤ汉铻嶅悎鐨勬櫤鑳芥椂浠ｃ€?,
+  '璇剧▼浣撶郴': '鏈绋嬪寘鍚洓涓牳蹇冩ā鍧楋細1.鏈烘瀯瀛﹀熀纭€ 2.杩愬姩瀛﹀垎鏋?3.鍔ㄥ姏瀛﹀缓妯?4.鏅鸿兘鎺у埗銆傛瘡涓ā鍧楅兘閰嶆湁铏氭嫙浠跨湡瀹為獙銆?,
+  '瀛︿範寤鸿': '瀛︿範鏈哄櫒浜哄伐绋嬪缓璁細1.鐞嗚涓庡疄璺靛苟閲?2.鎵撳ソ鏁板鍩虹锛堢嚎鎬т唬鏁般€佸井绉垎銆佸姏瀛︼級3.淇濇寔濂藉蹇冿紝涓诲姩鎺㈢储鍓嶆部鎶€鏈€?,
+  '瀹氫箟': '鏈哄櫒浜烘槸涓€绉嶈嚜鍔ㄥ寲鐨勬満姊扮郴缁燂紝鑳藉鑷富鎴栧崐鑷富鍦板畬鎴愪换鍔°€傚畠鍏峰鎰熺煡銆佸喅绛栧拰鎵ц鑳藉姏銆?,
+  '搴旂敤': '鏈哄櫒浜哄簲鐢ㄥ箍娉涳紝鍖呮嫭宸ヤ笟鍒堕€犮€佸尰鐤椾繚鍋ャ€佺墿娴侀厤閫併€佸啘涓氥€佸啗浜嬨€佸お绌烘帰绱㈢瓑澶氫釜棰嗗煙銆?,
+  '浼犳劅鍣?: '浼犳劅鍣ㄦ槸鏈哄櫒浜虹殑"鎰熷畼"锛岀敤浜庢劅鐭ュ懆鍥寸幆澧冧俊鎭紝濡傝瑙夈€佸惉瑙夈€佽Е瑙夈€佽窛绂荤瓑銆傚父瑙佺殑浼犳劅鍣ㄦ湁鎽勫儚澶淬€佽秴澹版尝浼犳劅鍣ㄣ€佺孩澶栦紶鎰熷櫒绛夈€?,
+  '鎺у埗': '鏈哄櫒浜烘帶鍒舵槸鎸囧鏈哄櫒浜虹殑杩愬姩鍜岃涓鸿繘琛岃鍒掑拰璋冭妭锛屼娇鍏惰兘澶熷畬鎴愰瀹氫换鍔°€傚寘鎷紑鐜帶鍒躲€侀棴鐜帶鍒躲€佽嚜閫傚簲鎺у埗銆佹櫤鑳芥帶鍒剁瓑鏂规硶銆?,
+  '鏈烘瀯瀛?: '鏈烘瀯瀛︽槸鐮旂┒鏈烘瀯鐨勭粨鏋勩€佽繍鍔ㄥ拰鍔ㄥ姏鎬ц兘鐨勫绉戯紝鏄満鍣ㄤ汉璁捐鐨勫熀纭€銆?,
+  '杩愬姩瀛?: '杩愬姩瀛︽槸鐮旂┒鐗╀綋浣嶇疆銆侀€熷害鍜屽姞閫熷害绛夎繍鍔ㄧ壒鎬х殑瀛︾锛屼笉鑰冭檻鍔涚殑浣滅敤銆?,
+  '鍔ㄥ姏瀛?: '鍔ㄥ姏瀛︽槸鐮旂┒鐗╀綋杩愬姩涓庝綔鐢ㄥ姏涔嬮棿鍏崇郴鐨勫绉戯紝鐢ㄤ簬鍒嗘瀽鏈哄櫒浜虹殑鍙楀姏鍜岃繍鍔ㄨ寰嬨€?
+};
+
+const contentText = document.getElementById('contentText');
+const chatMessages = document.getElementById('chatMessages');
+const startBtn = document.getElementById('startBtn');
+const startBtnText = document.getElementById('startBtnText');
+const speechBtn = document.getElementById('speechBtn');
+const speechBtnText = document.getElementById('speechBtnText');
+const chatInput = document.getElementById('chatInput');
+
+let currentMsgIndex = 0;
+let isStarted = false;
+let isPaused = false;
+let pauseAfterCurrent = false;
+let typingTimer = null;
+let speechEnabled = true;
+const speechSynthesis = window.speechSynthesis || null;
+
+function displayContent(text) {
+  contentText.textContent = text;
+}
+
+function streamContent(text, callback) {
+  let charIndex = 0;
+  contentText.textContent = '';
+  
+  function typeChar() {
+    if (charIndex < text.length) {
+      contentText.textContent += text[charIndex];
+      charIndex++;
+      let delay = 35;
+      if (text[charIndex-1] === '锛? || text[charIndex-1] === '銆? || text[charIndex-1] === '.' || text[charIndex-1] === '锛? || text[charIndex-1] === '锛?) {
+        delay = 80;
+      }
+      typingTimer = setTimeout(typeChar, delay);
+    } else {
+      if (callback) callback();
+    }
+  }
+  typeChar();
+}
+
+function playNextSegment() {
+  if (isPaused || pauseAfterCurrent) {
+    typingTimer = setTimeout(playNextSegment, 200);
+    return;
+  }
+  
+  if (currentMsgIndex >= lectureContent.length) {
+    startBtnText.textContent = '瀹屾垚';
+    startBtn.disabled = true;
+    return;
+  }
+  
+  const text = lectureContent[currentMsgIndex];
+  
+  if (speechEnabled && speechSynthesis) {
+    speakTextWithCallback(text, () => {
+      currentMsgIndex++;
+      if (typingTimer) clearTimeout(typingTimer);
+      if (pauseAfterCurrent) {
+        isPaused = true;
+        pauseAfterCurrent = false;
+      }
+      setTimeout(playNextSegment, 800);
+    });
+  }
+  
+  streamContent(text, () => {
+    if (!speechEnabled || !speechSynthesis) {
+      currentMsgIndex++;
+      if (pauseAfterCurrent) {
+        isPaused = true;
+        pauseAfterCurrent = false;
+      }
+      setTimeout(playNextSegment, 800);
+    }
+  });
+}
+
+function startLecture() {
+  if (isStarted && !isPaused) return;
+  
+  isPaused = false;
+  pauseAfterCurrent = false;
+  startBtnText.textContent = '鏆傚仠璁茶В';
+  startBtn.innerHTML = '<span>鈴?/span><span id="startBtnText">鏆傚仠璁茶В</span>';
+  startBtn.onclick = togglePause;
+  
+  if (!isStarted) {
+    isStarted = true;
+    currentMsgIndex = 0;
+  }
+  
+  playNextSegment();
+}
+
+function togglePause() {
+  if (isPaused) {
+    isPaused = false;
+    pauseAfterCurrent = false;
+    startBtnText.textContent = '鏆傚仠璁茶В';
+    startBtn.innerHTML = '<span>鈴?/span><span id="startBtnText">鏆傚仠璁茶В</span>';
+    if (speechSynthesis) speechSynthesis.resume();
+    playNextSegment();
+  } else {
+    pauseAfterCurrent = true;
+    startBtnText.textContent = '缁х画璁茶В';
+    startBtn.innerHTML = '<span>鈻?/span><span id="startBtnText">缁х画璁茶В</span>';
+  }
+}
+
+function restartAll() {
+  if (typingTimer) clearTimeout(typingTimer);
+  if (speechSynthesis) speechSynthesis.cancel();
+  
+  isStarted = false;
+  isPaused = false;
+  pauseAfterCurrent = false;
+  currentMsgIndex = 0;
+  
+  startBtnText.textContent = '寮€濮嬭瑙?;
+  startBtn.innerHTML = '<span>鈻?/span><span id="startBtnText">寮€濮嬭瑙?/span>';
+  startBtn.onclick = startLecture;
+  startBtn.disabled = false;
+  
+  displayContent('鐐瑰嚮鍙充晶銆屽紑濮嬭瑙ｃ€嶆寜閽紑濮嬪涔?);
+}
+
+function toggleSpeech() {
+  if (!speechSynthesis) {
+    alert('鎮ㄧ殑娴忚鍣ㄤ笉鏀寔璇煶鍚堟垚鍔熻兘');
+    return;
+  }
+  
+  speechEnabled = !speechEnabled;
+  
+  if (speechEnabled) {
+    speechBtnText.textContent = '璇煶鏈楄';
+    speechBtn.innerHTML = '<span>馃攰</span><span id="speechBtnText">璇煶鏈楄</span>';
+    speechBtn.classList.remove('primary');
+  } else {
+    speechBtnText.textContent = '鍏抽棴鏈楄';
+    speechBtn.innerHTML = '<span>馃攪</span><span id="speechBtnText">鍏抽棴鏈楄</span>';
+    speechBtn.classList.add('primary');
+    speechSynthesis.cancel();
+  }
+}
+
+function addChatMessage(content, role = 'ai') {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  if (role === 'ai') {
+    div.innerHTML = `<div class="msg-label">AI 鍔╂墜</div><div class="msg-body">${content}</div>`;
+  } else {
+    div.textContent = content;
+  }
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addTypingIndicator() {
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-label">AI 鍔╂墜</div><div class="typing-indicator"><span></span><span></span><span></span></div>`;
+  chatMessages.appendChild(div);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  const msgEls = chatMessages.querySelectorAll('.msg');
+  for (let i = msgEls.length - 1; i >= 0; i--) {
+    if (msgEls[i].querySelector('.typing-indicator')) {
+      msgEls[i].remove();
+      break;
+    }
+  }
+}
+
+function sendQuestion() {
+  const question = chatInput.value.trim();
+  if (!question) return;
+  
+  addChatMessage(question, 'user');
+  chatInput.value = '';
+  
+  let response = '鎶辨瓑锛屾垜鏆傛椂鏃犳硶鍥炵瓟杩欎釜闂銆傛偍鍙互灏濊瘯璇㈤棶鍏充簬鏈哄櫒浜哄畾涔夈€佸彂灞曞巻绋嬨€佽绋嬩綋绯汇€佸涔犲缓璁瓑鏂归潰鐨勯棶棰樸€?;
+  
+  for (const key in aiResponses) {
+    if (question.includes(key)) {
+      response = aiResponses[key];
+      break;
+    }
+  }
+  
+  addTypingIndicator();
+  
+  setTimeout(() => {
+    removeTypingIndicator();
+    addChatMessage(response);
+    if (speechEnabled && speechSynthesis) speakText(response);
+  }, 500 + Math.random() * 300);
+}
+
+function handleKeyup(event) {
+  if (event.key === 'Enter') sendQuestion();
+}
+
+function speakTextWithCallback(text, callback) {
+  if (!speechEnabled || !speechSynthesis) {
+    if (callback) callback();
+    return;
+  }
+  
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'zh-CN';
+  utterance.rate = 0.9;
+  utterance.volume = 0.8;
+  
+  const voices = speechSynthesis.getVoices();
+  const chineseVoice = voices.find(v => v.lang.startsWith('zh')) || voices.find(v => v.name.includes('Chinese'));
+  if (chineseVoice) utterance.voice = chineseVoice;
+  
+  utterance.onend = function() { if (callback) callback(); };
+  utterance.onerror = function() { if (callback) callback(); };
+  
+  speechSynthesis.speak(utterance);
+}
+
+function speakText(text) {
+  speakTextWithCallback(text, null);
+}
+
+restartAll();
+</script>
+</body>
+</html>
+
