@@ -6,6 +6,14 @@
   <title>璇剧▼ 1.1 鈥?鏈哄櫒浜哄伐绋嬪熀纭€</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand-start: #3370ff;
+      --brand-end: #7c3df5;
+      --brand-deep: #284fd3;
+      --brand-soft: #eef4ff;
+      --brand-soft-2: #f5f2ff;
+      --brand-border: #c9d7ff;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
       background: #f5f5f7;
@@ -24,7 +32,7 @@
       flex-shrink: 0;
     }
     .topbar .back-btn {
-      color: #534AB7;
+      color: var(--brand-start);
       font-size: 13px;
       cursor: pointer;
       display: flex;
@@ -81,7 +89,7 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -100,7 +108,7 @@
     .content-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 2px; }
     .teacher-name {
       font-size: 11px;
-      color: #a59eff;
+      color: #c5d0ff;
       font-weight: 500;
       margin-bottom: 4px;
     }
@@ -111,7 +119,7 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .content-text strong { color: #a59eff; }
+    .content-text strong { color: #c5d0ff; }
 
     /* Button column - on the right, vertical layout */
     .btn-column {
@@ -137,11 +145,11 @@
       transition: all 0.15s;
     }
     .ctrl-btn:hover:not(:disabled) {
-      background: rgba(83, 74, 183, 0.8);
-      border-color: #534AB7;
+      background: rgba(51, 112, 255, 0.82);
+      border-color: var(--brand-start);
     }
     .ctrl-btn.primary {
-      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
       border-color: transparent;
     }
     .ctrl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -169,7 +177,7 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -192,19 +200,19 @@
     .msg { max-width: 100%; }
     .msg.user {
       align-self: flex-end;
-      background: #EEEDFE;
-      border: 0.5px solid #d8d5f6;
+      background: var(--brand-soft);
+      border: 0.5px solid var(--brand-border);
       border-radius: 12px 12px 4px 12px;
       padding: 10px 14px;
       font-size: 13px;
-      color: #3C3489;
+      color: var(--brand-deep);
       word-break: break-word;
       max-width: 85%;
     }
     .msg.ai { align-self: flex-start; max-width: 85%; }
     .msg.ai .msg-label {
       font-size: 11px;
-      color: #7F77DD;
+      color: var(--brand-end);
       font-weight: 500;
       margin-bottom: 5px;
     }
@@ -212,8 +220,8 @@
       font-size: 13px;
       line-height: 1.7;
       color: #555;
-      background: #f7f5ff;
-      border: 0.5px solid #e0ddf5;
+      background: var(--brand-soft-2);
+      border: 0.5px solid #dcd7ff;
       border-radius: 12px 12px 12px 4px;
       padding: 11px 13px;
       word-break: break-word;
@@ -225,14 +233,14 @@
       display: flex;
       gap: 4px;
       padding: 10px 14px;
-      background: #f7f5ff;
-      border: 0.5px solid #e0ddf5;
+      background: var(--brand-soft-2);
+      border: 0.5px solid #dcd7ff;
       border-radius: 12px 12px 12px 4px;
     }
     .typing-indicator span {
       width: 5px;
       height: 5px;
-      background: #534AB7;
+      background: var(--brand-start);
       border-radius: 50%;
       animation: typing-bounce 1.4s infinite ease-in-out;
     }
@@ -262,10 +270,10 @@
       outline: none;
       transition: border-color 0.15s;
     }
-    .chat-input-area input:focus { border-color: #534AB7; }
+    .chat-input-area input:focus { border-color: var(--brand-start); }
     .chat-input-area button {
       padding: 9px 18px;
-      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      background: linear-gradient(135deg, var(--brand-start), var(--brand-end));
       color: #fff;
       border: none;
       border-radius: 20px;

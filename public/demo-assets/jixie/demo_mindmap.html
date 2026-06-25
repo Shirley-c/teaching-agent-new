@@ -6,9 +6,16 @@
   <title>知识图谱 — 机械原理</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand-start: #3370ff;
+      --brand-end: #7c3df5;
+      --brand-deep: #4d34d8;
+      --brand-soft: #eef4ff;
+      --brand-border: #d9d5ff;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: linear-gradient(135deg, #f8f7ff 0%, #f0f4ff 100%);
+      background: linear-gradient(135deg, #f4f7ff 0%, #eef2ff 55%, #f6f0ff 100%);
       color: #333;
       height: 100vh;
       overflow: hidden;
@@ -41,9 +48,9 @@
 
     .node-center circle {
       fill: url(#centerGradient);
-      stroke: #3C3489;
+      stroke: var(--brand-deep);
       stroke-width: 3;
-      filter: drop-shadow(0 8px 20px rgba(83, 74, 183, 0.4));
+      filter: drop-shadow(0 8px 20px rgba(51, 112, 255, 0.28));
     }
 
     .node-center text {
@@ -56,9 +63,9 @@
 
     .node-level1 circle {
       fill: url(#level1Gradient);
-      stroke: #534AB7;
+      stroke: var(--brand-start);
       stroke-width: 2;
-      filter: drop-shadow(0 4px 12px rgba(83, 74, 183, 0.25));
+      filter: drop-shadow(0 4px 12px rgba(51, 112, 255, 0.2));
     }
 
     .node-level1 text {
@@ -71,9 +78,9 @@
 
     .node-level2 circle {
       fill: #fff;
-      stroke: #7F77DD;
+      stroke: var(--brand-end);
       stroke-width: 2;
-      filter: drop-shadow(0 2px 8px rgba(127, 119, 221, 0.2));
+      filter: drop-shadow(0 2px 8px rgba(124, 61, 245, 0.16));
     }
 
     .node-level2 text {
@@ -85,8 +92,8 @@
     }
 
     .node-level3 circle {
-      fill: #EEEDFE;
-      stroke: #A8A0F0;
+      fill: var(--brand-soft);
+      stroke: #adc1ff;
       stroke-width: 1.5;
     }
 
@@ -99,7 +106,7 @@
 
     .node:hover circle {
       stroke-width: 3;
-      filter: drop-shadow(0 6px 20px rgba(83, 74, 183, 0.4));
+      filter: drop-shadow(0 6px 20px rgba(51, 112, 255, 0.28));
     }
 
     .node.selected circle {
@@ -109,23 +116,23 @@
 
     /* Connection Lines */
     .connection {
-      stroke: #D8D5F6;
+      stroke: var(--brand-border);
       stroke-width: 2;
       fill: none;
     }
 
     .connection-level1 {
-      stroke: #7F77DD;
+      stroke: var(--brand-end);
       stroke-width: 3;
     }
 
     .connection-level2 {
-      stroke: #A8A0F0;
+      stroke: #adc1ff;
       stroke-width: 2;
     }
 
     .connection-level3 {
-      stroke: #D8D5F6;
+      stroke: var(--brand-border);
       stroke-width: 1.5;
     }
 
@@ -133,7 +140,7 @@
     .tooltip {
       position: fixed;
       background: rgba(255, 255, 255, 0.98);
-      border: 1px solid #d8d5f6;
+      border: 1px solid var(--brand-border);
       border-radius: 12px;
       padding: 12px 16px;
       max-width: 320px;
@@ -151,7 +158,7 @@
     .tooltip-title {
       font-size: 13px;
       font-weight: 600;
-      color: #3C3489;
+      color: var(--brand-deep);
       margin-bottom: 8px;
       display: flex;
       align-items: center;
@@ -166,7 +173,7 @@
     }
 
     .tooltip-content strong {
-      color: #534AB7;
+      color: var(--brand-start);
     }
 
     .tooltip-content .formula {
@@ -181,7 +188,7 @@
     }
 
     .tooltip-tips {
-      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      background: linear-gradient(135deg, #edf4ff 0%, #f5eeff 100%);
       border-radius: 8px;
       padding: 8px 10px;
       display: flex;
@@ -210,12 +217,12 @@
     <svg class="mindmap-svg" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet">
       <defs>
         <radialGradient id="centerGradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#7F77DD" />
-          <stop offset="100%" stop-color="#3C3489" />
+          <stop offset="0%" stop-color="#3370ff" />
+          <stop offset="100%" stop-color="#7c3df5" />
         </radialGradient>
         <radialGradient id="level1Gradient" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#534AB7" />
-          <stop offset="100%" stop-color="#43389E" />
+          <stop offset="0%" stop-color="#3370ff" />
+          <stop offset="100%" stop-color="#5a4bf2" />
         </radialGradient>
       </defs>
 
@@ -632,7 +639,7 @@
           el.setAttribute('stroke', '#FF6B6B');
           el.setAttribute('stroke-width', '4');
           setTimeout(() => {
-            el.setAttribute('stroke', '#534AB7');
+            el.setAttribute('stroke', '#3370ff');
             el.setAttribute('stroke-width', '2');
           }, 2000);
         });
