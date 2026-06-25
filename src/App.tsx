@@ -264,8 +264,8 @@ const masterResourceLibrary = [
   },
   {
     id: "res-2",
-    title: "《机器人工程基础》精讲教学课件.pptx",
-    type: "pptx",
+    title: "无人机峡谷攀爬.fbx",
+    type: "fbx",
     size: "8.5 MB",
     date: "2026-04-15",
     category: "department",
@@ -282,8 +282,8 @@ const masterResourceLibrary = [
   },
   {
     id: "res-4",
-    title: "《机器人工程基础》仿真模型搭建与实训操作手册.pdf",
-    type: "pdf",
+    title: "四旋翼无人机.obj",
+    type: "obj",
     size: "3.4 MB",
     date: "2026-05-18",
     category: "department",
@@ -507,6 +507,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
         {
           id: "sec-1-2",
@@ -514,6 +516,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
       ],
     },
@@ -528,6 +532,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
         {
           id: "sec-2-2",
@@ -535,6 +541,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
       ],
     },
@@ -549,6 +557,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
         {
           id: "sec-3-2",
@@ -556,6 +566,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
         {
           id: "sec-3-3",
@@ -563,6 +575,8 @@ export default function App() {
           materials: [],
           slideData: null,
           script: null,
+          scriptMode: "ai",
+          generationType: "图文",
         },
       ],
     },
@@ -724,15 +738,16 @@ export default function App() {
       }
     }
   };
-  const openResourceModal = () => {
+  const openResourceModal = (sectionId = activeSectionId) => {
     if (workStep === 2) {
       let activeSecMaterials = [];
       syllabus.forEach((ch) =>
         ch.sections.forEach((sec) => {
-          if (sec.id === activeSectionId)
+          if (sec.id === sectionId)
             activeSecMaterials = sec.materials || [];
         }),
       );
+      setActiveSectionId(sectionId);
       setTempSelectedResources([...activeSecMaterials]);
     }
     setIsResourceModalOpen(true);
@@ -759,6 +774,32 @@ export default function App() {
     );
     setIsResourceModalOpen(false);
     showToast(`成功同步 ${tempSelectedResources.length} 个本地教学资源！`);
+  };
+  const getSectionScriptMode = (section) => section.scriptMode || "ai";
+  const validateSectionsBeforeGeneration = (sections) => {
+    const missingMaterialsSection = sections.find(
+      (section) => !section.materials || section.materials.length === 0,
+    );
+    if (missingMaterialsSection) {
+      return {
+        valid: false,
+        sectionId: missingMaterialsSection.id,
+        message: "请先为该小节选择本地素材，再生成课件+讲稿。",
+      };
+    }
+    const missingManualScriptSection = sections.find(
+      (section) =>
+        getSectionScriptMode(section) === "manual" &&
+        !(section.script || "").trim(),
+    );
+    if (missingManualScriptSection) {
+      return {
+        valid: false,
+        sectionId: missingManualScriptSection.id,
+        message: "该小节已选择“使用当前讲稿”，请先填写讲稿内容。",
+      };
+    }
+    return { valid: true };
   };
   const getLinkedResourceIds = () => {
     return masterResourceLibrary
@@ -942,7 +983,7 @@ export default function App() {
                 orderedDemoAsset.id,
                 sec.title || orderedDemoAsset.title,
               ),
-              script: "",
+              script: orderedTemplate.script || "",
             });
             continue;
           }
