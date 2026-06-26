@@ -315,7 +315,7 @@ const callGeminiAPI = async (prompt, isJson = false) => {
   if (!apiKey) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        if (isJson && prompt.includes("结构化的教学大纲")) {
+        if (isJson && prompt.includes("结构化的课程目录")) {
           resolve(`[
                 {
                   "id": "s-1",
@@ -422,7 +422,7 @@ const callGeminiAPI = async (prompt, isJson = false) => {
   }
   return new Promise((resolve) => {
     setTimeout(() => {
-      if (isJson && prompt.includes("结构化的教学大纲")) {
+      if (isJson && prompt.includes("结构化的课程目录")) {
         resolve(
           `[
             {"id": "s-1", "title": "降级大纲第一章", "desc": "AI由于网络原因临时生成的降级大纲", "sections": [{"id": "sec-1-1", "title": "1.1 四旋翼无人机基础认知"}, {"id": "sec-1-2", "title": "1.2 四旋翼飞行原理与姿态控制"}]},
@@ -1224,7 +1224,7 @@ export default function App() {
       setIsGeneratingExam(false);
     }
   };
-  // --- 全局生成教学大纲 (Step 1) ---
+  // --- 全局生成课程目录 (Step 1) ---
   const triggerSyllabusGeneration = async () => {
     if (!courseName.trim()) {
       showToast("请输入课程名称！");
@@ -1236,7 +1236,7 @@ export default function App() {
     try {
       setLoadingProgress(30);
       setLoadingMessage("正在设计章节结构与知识点拆解...");
-      const prompt = `为课程《${courseName}》设计结构化的教学大纲。包含描述：${knowledgeDesc}。至少生成 3 个章节，并保证总小节数不少于 7 个。严格返回 JSON，格式如: [{"id":"s-1","title":"章节1","desc":"介绍","sections":[{"id":"sec-1-1","title":"小节1"}]}]。不含 markdown。`;
+      const prompt = `为课程《${courseName}》设计结构化的课程目录。包含描述：${knowledgeDesc}。至少生成 3 个章节，并保证总小节数不少于 7 个。严格返回 JSON，格式如: [{"id":"s-1","title":"章节1","desc":"介绍","sections":[{"id":"sec-1-1","title":"小节1"}]}]。不含 markdown。`;
       const jsonText = await callGeminiAPI(prompt, true);
       setLoadingProgress(60);
       setLoadingMessage("正在清洗 JSON 返回数据...");
@@ -1695,7 +1695,7 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-lg">
-                      AI 正在全力规划教学大纲...
+                      AI 正在全力规划课程目录...
                     </h3>
                     <p className="text-slate-500 text-xs mt-1">
                       请老师稍候，大模型正在深层处理知识结构。
@@ -1727,10 +1727,10 @@ export default function App() {
                 <div className="max-w-2xl mx-auto w-full py-10 px-6 space-y-8 animate-fade-in text-slate-800">
                   <div className="text-center space-y-2">
                     <h2 className="text-xl font-extrabold text-slate-900">
-                      欢迎开启智能教学大纲规划
+                      欢迎开启智能课程目录规划
                     </h2>
                     <p className="text-slate-500 text-xs">
-                      只需告诉智能体您的课程大方向与知识点，AI将瞬时为您定制分级教学大纲。
+                      只需告诉智能体您的课程大方向与知识点，AI将瞬时为您定制分级课程目录。
                     </p>
                   </div>
                   <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-6 space-y-6">
@@ -1873,7 +1873,7 @@ export default function App() {
                     onClick={triggerSyllabusGeneration}
                     className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 rounded-xl flex items-center justify-center space-x-2 shadow-md transition duration-300"
                   >
-                    <span>生成分级教学大纲</span>
+                    <span>生成分级课程目录</span>
                     <Sparkles className="w-4 h-4" />
                   </button>
                 </div>
@@ -3197,7 +3197,7 @@ export default function App() {
                                   </h3>
                                   <p className="text-[10px] text-slate-500">
                                     AI
-                                    基于教学大纲与您提供的提示词动态生成，您可在此直接修改考卷
+                                    基于课程目录与您提供的提示词动态生成，您可在此直接修改考卷
                                   </p>
                                 </div>
                               </div>
