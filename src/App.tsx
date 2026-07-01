@@ -446,6 +446,7 @@ export default function App() {
   const [step4Source, setStep4Source] = useState<
     "editor" | "saved-coursewares"
   >("editor");
+  const [isTeachingMode, setIsTeachingMode] = useState(false);
   const [step2Source, setStep2Source] = useState<
     "normal" | "saved-coursewares"
   >("normal");
@@ -593,6 +594,7 @@ export default function App() {
   const [isTtsSpeaking, setIsTtsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+  const [isStep4Fullscreen, setIsStep4Fullscreen] = useState(false);
   // 素材模态框
   const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
   const [tempSelectedResources, setTempSelectedResources] = useState([]);
@@ -603,6 +605,7 @@ export default function App() {
   const [showToastBool, setShowToastBool] = useState(false);
   const speechRef = useRef(null);
   const practicalExamFullscreenRef = useRef<HTMLDivElement | null>(null);
+  const step4FullscreenRef = useRef<HTMLDivElement | null>(null);
   const [waveBars, setWaveBars] = useState(Array(24).fill(3));
   const hasGeneratedSectionAssets = syllabus.some((ch) =>
     ch.sections?.some((sec) => sec.slideData || sec.script),
@@ -652,6 +655,17 @@ export default function App() {
     if (!hasLoadedSavedCoursewares) return;
     localStorage.setItem("saved-coursewares", JSON.stringify(savedCoursewares));
   }, [savedCoursewares, hasLoadedSavedCoursewares]);
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsStep4Fullscreen(
+        document.fullscreenElement === step4FullscreenRef.current,
+      );
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
   const speakText = (text) => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -683,6 +697,22 @@ export default function App() {
     if (!el) return;
     try {
       if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("当前浏览器不支持全屏或全屏开启失败");
+    }
+  };
+  const toggleStep4Fullscreen = async () => {
+    const el = step4FullscreenRef.current;
+    if (!el) return;
+    try {
+      if (document.fullscreenElement === el) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        }
+      } else if (el.requestFullscreen) {
         await el.requestFullscreen();
       }
     } catch (error) {
@@ -900,6 +930,7 @@ export default function App() {
   };
   const handlePreviewSavedCourseware = (item) => {
     stopSpeaking();
+    setIsTeachingMode(false);
     setCourseName(item.name);
     setSyllabus(item.syllabus || []);
     setCourseware(item.courseware || []);
@@ -911,8 +942,23 @@ export default function App() {
     setWorkStep(4);
     setCurrentSlide(0);
   };
+  const handleStartTeaching = (item) => {
+    stopSpeaking();
+    setIsTeachingMode(true);
+    setCourseName(item.name);
+    setSyllabus(item.syllabus || []);
+    setCourseware(item.courseware || []);
+    setStep4Tab("presentation");
+    if (item.examConfig) setExamConfig(item.examConfig);
+    if (item.interactionConfig) setInteractionConfig(item.interactionConfig);
+    setStep4Source("saved-coursewares");
+    setCurrentPage("workspace");
+    setWorkStep(4);
+    setCurrentSlide(0);
+  };
   const handleEditSavedCourseware = (item) => {
     stopSpeaking();
+    setIsTeachingMode(false);
     setCourseName(item.name);
     setSyllabus(item.syllabus || []);
     setCourseware(item.courseware || []);
@@ -1652,6 +1698,12 @@ export default function App() {
                           预览
                         </button>
                         <button
+                          onClick={() => handleStartTeaching(item)}
+                          className="px-4 py-2 text-sm font-bold rounded-lg bg-indigo-600 text-white border border-indigo-600 hover:bg-indigo-700"
+                        >
+                          开始授课
+                        </button>
+                        <button
                           onClick={() => handleEditSavedCourseware(item)}
                           className="px-4 py-2 text-sm font-bold rounded-lg bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
                         >
@@ -2275,7 +2327,7 @@ export default function App() {
                                                   "图文",
                                                   "h5交互",
                                                   "PPT",
-                                                  "问答",
+                                                  "3D模型",
                                                   "知识图谱",
                                                 ].map((type) => (
                                                   <button
@@ -2678,7 +2730,7 @@ export default function App() {
                       {step2Tab === "presentation" && (
                         <>
                           {activeSec?.slideData ? (
-                            <div className="w-full max-w-4xl flex flex-col space-y-6">
+                            <div className="w-full max-w-1xl flex flex-col space-y-2">
                               {/* Slide Card */}
                               <div className="bg-white text-slate-900 rounded-2xl p-8 md:p-10 relative shadow-xl border border-slate-200 min-h-[420px] flex flex-col">
                                 {activeSec.slideData.demoOnly ? (
@@ -2691,12 +2743,12 @@ export default function App() {
                                         纯素材演示页
                                       </span>
                                     </div>
-                                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-inner min-h-[560px]">
+                                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-inner min-h-[400px]">
                                       {activeDemoAsset ? (
                                         <iframe
                                           src={activeDemoAsset.src}
                                           title={activeDemoAsset.title}
-                                          className="w-full h-full min-h-[560px] border-0"
+                                          className="w-full h-full min-h-[400px] border-0"
                                         />
                                       ) : (
                                         <div className="h-[560px] flex items-center justify-center text-sm text-slate-400">
@@ -3279,12 +3331,18 @@ export default function App() {
               })()}
             {/* STEP 4: UPGRADED INTERACTIVE PRESENTATION PLAYBACK & PREVIEW */}
             {workStep === 4 && (
-              <div className="flex-1 flex flex-col bg-slate-50 overflow-hidden select-none">
+              <div
+                ref={step4FullscreenRef}
+                className="flex-1 flex flex-col bg-slate-50 overflow-hidden select-none"
+              >
                 {/* --- 顶部全局操作栏 (新增) --- */}
-                <div className="px-6 py-3 border-b border-slate-200 bg-white flex items-center justify-between z-20 shrink-0 shadow-sm">
+                <div
+                  className={`border-b border-slate-200 bg-white items-center justify-between z-20 shrink-0 shadow-sm ${isStep4Fullscreen ? "hidden" : "flex px-6 py-3"}`}
+                >
                   <button
                     onClick={() => {
                       stopSpeaking();
+                      setIsTeachingMode(false);
                       if (step4Source === "saved-coursewares") {
                         setCurrentPage("saved-coursewares");
                       } else {
@@ -3300,46 +3358,60 @@ export default function App() {
                         : "返回编辑大纲"}
                     </span>
                   </button>
-                  <div className="flex bg-slate-100 p-1 rounded-lg">
+                  {isTeachingMode ? (
                     <button
-                      onClick={() => setStep4Tab("presentation")}
-                      className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "presentation" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                      onClick={toggleStep4Fullscreen}
+                      className="px-4 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-[13px] font-bold border border-indigo-200 hover:bg-indigo-100 transition flex items-center space-x-1.5"
                     >
-                      演示模式预览
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>{isStep4Fullscreen ? "退出全屏" : "全屏授课"}</span>
                     </button>
-                    <button
-                      onClick={() => setStep4Tab("interactive")}
-                      className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "interactive" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                    >
-                      交互模式预览
-                    </button>
-                    <button
-                      onClick={() => setStep4Tab("exam")}
-                      className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "exam" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-                    >
-                      考试模式预览
-                    </button>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button
-                      onClick={handleSaveCourseware}
-                      className="text-[13px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 py-1.5 px-4 rounded-lg flex items-center transition shadow-sm"
-                    >
-                      <Save className="w-3.5 h-3.5 mr-1" /> 保存
-                    </button>
-                    <button
-                      onClick={handlePublishCourseware}
-                      className="text-[13px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 px-4 rounded-lg flex items-center transition shadow-md"
-                    >
-                      <Send className="w-3.5 h-3.5 mr-1" /> 发布
-                    </button>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex bg-slate-100 p-1 rounded-lg">
+                        <button
+                          onClick={() => setStep4Tab("presentation")}
+                          className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "presentation" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                          演示模式预览
+                        </button>
+                        <button
+                          onClick={() => setStep4Tab("interactive")}
+                          className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "interactive" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                          交互模式预览
+                        </button>
+                        <button
+                          onClick={() => setStep4Tab("exam")}
+                          className={`px-6 py-1.5 rounded-md text-[15px] font-bold transition ${step4Tab === "exam" ? "bg-white text-indigo-700 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                        >
+                          考试模式预览
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={handleSaveCourseware}
+                          className="text-[13px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 py-1.5 px-4 rounded-lg flex items-center transition shadow-sm"
+                        >
+                          <Save className="w-3.5 h-3.5 mr-1" /> 保存
+                        </button>
+                        <button
+                          onClick={handlePublishCourseware}
+                          className="text-[13px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 px-4 rounded-lg flex items-center transition shadow-md"
+                        >
+                          <Send className="w-3.5 h-3.5 mr-1" /> 发布
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="flex-1 flex overflow-hidden">
                   {step4Tab === "presentation" && (
                     <>
                       {/* ====== RESTORED: LEFT COLUMN: Thumbnail Navigation ====== */}
-                      <div className="w-64 bg-slate-100 border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto p-4 space-y-4 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)] z-10">
+                      <div
+                        className={`w-64 bg-slate-100 border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto p-4 space-y-4 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.05)] z-10 ${isStep4Fullscreen ? "hidden" : "flex"}`}
+                      >
                         <div className="px-1 pb-2 border-b border-slate-200 flex items-center justify-between">
                           <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block">
                             课件页面导航
@@ -3392,13 +3464,19 @@ export default function App() {
                       <div className="flex-1 flex flex-col bg-slate-50 relative overflow-hidden">
                         {/* Header inside player */}
                         {/* Central Play Area */}
-                        <div className="flex-1 pt-3 px-6 pb-6 md:pt-4 md:px-8 md:pb-8 flex items-center justify-center overflow-y-auto bg-slate-100 relative">
-                          <div className="w-full max-w-5xl flex flex-col space-y-1.5">
+                        <div
+                          className={`flex-1 overflow-y-auto bg-slate-100 relative flex ${isStep4Fullscreen ? "pt-0 px-0 pb-0 items-stretch justify-start" : "pt-3 px-6 pb-6 md:pt-4 md:px-8 md:pb-8 items-center justify-center"}`}
+                        >
+                          <div
+                            className={`w-full max-w-none flex flex-col ${isStep4Fullscreen ? "space-y-0 min-h-full h-full" : "space-y-1.5"}`}
+                          >
                             {/* Main pure white canvas slide */}
-                            <div className="bg-white text-slate-900 rounded-2xl p-8 md:p-10 relative shadow-lg border border-slate-200 min-h-[520px] flex flex-col">
+                            <div
+                              className={`bg-white text-slate-900 overflow-hidden relative shadow-lg border border-slate-200 flex flex-col ${isStep4Fullscreen ? "flex-1 min-h-0 rounded-none p-4 md:p-5" : "rounded-2xl p-6 md:p-7 min-h-[520px]"}`}
+                            >
                               {courseware[currentSlide]?.demoOnly ? (
                                 <div className="flex-1 flex flex-col">
-                                  <div className="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+                                  <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-2">
                                     <h3 className="text-2xl font-black text-slate-900 tracking-wide leading-snug">
                                       {courseware[currentSlide]?.title}
                                     </h3>
@@ -3406,12 +3484,14 @@ export default function App() {
                                       纯素材演示页
                                     </span>
                                   </div>
-                                  <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-inner min-h-[560px]">
+                                  <div
+                                    className={`flex-1 bg-slate-50 border border-slate-200 overflow-hidden shadow-inner ${isStep4Fullscreen ? "rounded-xl min-h-0" : "rounded-2xl min-h-[460px]"}`}
+                                  >
                                     {courseware[currentSlide]?.demoSrc ? (
                                       <iframe
                                         src={courseware[currentSlide]?.demoSrc}
                                         title={courseware[currentSlide]?.title}
-                                        className="w-full h-full min-h-[560px] border-0"
+                                        className={`w-full h-full border-0 ${isStep4Fullscreen ? "min-h-0" : "min-h-[460px]"}`}
                                       />
                                     ) : (
                                       <div className="h-[560px] flex items-center justify-center text-sm text-slate-400">
@@ -3422,7 +3502,7 @@ export default function App() {
                                 </div>
                               ) : (
                                 <>
-                                  <div className="flex items-center justify-between pb-5 border-b border-slate-100 mb-6">
+                                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-2">
                                     <div>
                                       <h3 className="text-2xl font-black text-slate-900 tracking-wide mb-1.5 leading-snug">
                                         {courseware[currentSlide]?.title}
@@ -3469,8 +3549,8 @@ export default function App() {
                               )}
                             </div>
                             {/* Bottom Slide Console */}
-                            <div className="bg-white border border-slate-200 rounded-xl px-5 py-2 flex items-center justify-between text-xs text-slate-600 shadow-none">
-                              <div className="flex items-center space-x-5">
+                            <div className="bg-white border border-slate-200 rounded-xl px-4 py-1.5 flex items-center justify-between text-xs text-slate-600 shadow-none">
+                              <div className="flex items-center space-x-4">
                                 <button
                                   onClick={() => {
                                     const nextMute = !isMuted;
@@ -3481,13 +3561,13 @@ export default function App() {
                                         courseware[currentSlide]?.script,
                                       );
                                   }}
-                                  className={`p-2 rounded-lg hover:bg-slate-100 transition border border-slate-200 ${isMuted ? "text-rose-500 bg-rose-50 border-rose-200" : "text-slate-600"}`}
+                                  className={`p-1.5 rounded-lg hover:bg-slate-100 transition border border-slate-200 ${isMuted ? "text-rose-500 bg-rose-50 border-rose-200" : "text-slate-600"}`}
                                   title={isMuted ? "取消静音" : "开启讲师发音"}
                                 >
                                   {isMuted ? (
-                                    <VolumeX className="w-4 h-4" />
+                                    <VolumeX className="w-3.5 h-3.5" />
                                   ) : (
-                                    <Volume2 className="w-4 h-4" />
+                                    <Volume2 className="w-3.5 h-3.5" />
                                   )}
                                 </button>
                                 <div className="flex items-center space-x-2">
@@ -3501,34 +3581,34 @@ export default function App() {
                                         parseFloat(e.target.value),
                                       )
                                     }
-                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded p-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
                                   >
-                                    <option value="1">1.0x 标准</option>
-                                    <option value="1.25">1.25x 快</option>
-                                    <option value="1.5">1.5x 更快</option>
-                                    <option value="2.0">2.0x 极速</option>
+                                    <option value="1">1.0x</option>
+                                    <option value="1.25">1.25x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2.0">2.0x</option>
                                   </select>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-6">
+                              <div className="flex items-center space-x-4">
                                 <button
                                   onClick={() => navigateSection(-1)}
                                   disabled={currentSlide === 0}
-                                  className="text-slate-500 hover:text-indigo-600 disabled:opacity-30 p-2 hover:bg-slate-100 rounded-lg flex items-center space-x-1 border border-transparent hover:border-slate-200"
+                                  className="text-slate-500 hover:text-indigo-600 disabled:opacity-30 px-2 py-1.5 hover:bg-slate-100 rounded-lg flex items-center space-x-1 border border-transparent hover:border-slate-200"
                                 >
-                                  <ChevronLeft className="w-4 h-4" />
-                                  <span className="font-semibold hidden sm:inline">
+                                  <ChevronLeft className="w-3.5 h-3.5" />
+                                  <span className="font-semibold text-[11px] hidden sm:inline">
                                     上一页
                                   </span>
                                 </button>
                                 <button
                                   onClick={togglePlay}
-                                  className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition transform hover:scale-105 active:scale-95 ${isPlaying ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md transition transform hover:scale-105 active:scale-95 ${isPlaying ? "bg-amber-500 hover:bg-amber-600" : "bg-indigo-600 hover:bg-indigo-700"}`}
                                 >
                                   {isPlaying ? (
-                                    <Pause className="w-5 h-5 fill-current" />
+                                    <Pause className="w-4 h-4 fill-current" />
                                   ) : (
-                                    <Play className="w-5 h-5 fill-current ml-1" />
+                                    <Play className="w-4 h-4 fill-current ml-0.5" />
                                   )}
                                 </button>
                                 <button
@@ -3536,16 +3616,16 @@ export default function App() {
                                   disabled={
                                     currentSlide === courseware.length - 1
                                   }
-                                  className="text-slate-500 hover:text-indigo-600 disabled:opacity-30 p-2 hover:bg-slate-100 rounded-lg flex items-center space-x-1 border border-transparent hover:border-slate-200"
+                                  className="text-slate-500 hover:text-indigo-600 disabled:opacity-30 px-2 py-1.5 hover:bg-slate-100 rounded-lg flex items-center space-x-1 border border-transparent hover:border-slate-200"
                                 >
-                                  <span className="font-semibold hidden sm:inline">
+                                  <span className="font-semibold text-[11px] hidden sm:inline">
                                     下一页
                                   </span>
-                                  <ChevronRight className="w-4 h-4" />
+                                  <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                               </div>
-                              <div className="flex items-center justify-end min-w-[100px]">
-                                <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
+                              <div className="flex items-center justify-end min-w-[88px]">
+                                <span className="font-mono text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
                                   {currentSlide + 1} / {courseware.length}
                                 </span>
                               </div>
@@ -3553,7 +3633,7 @@ export default function App() {
                             {/* Script Box (Always visible if script exists) */}
                             {courseware[currentSlide]?.script && (
                               <div
-                                className={`bg-white border ${isPlaying ? "border-indigo-300 shadow-md ring-2 ring-indigo-500/10" : "border-slate-200 shadow-sm"} rounded-xl p-5 flex items-start space-x-4 transition-all duration-300 relative overflow-hidden shrink-0`}
+                                className={`bg-white border ${isPlaying ? "border-indigo-300 shadow-md ring-2 ring-indigo-500/10" : "border-slate-200 shadow-sm"} rounded-xl flex items-start space-x-4 transition-all duration-300 relative overflow-hidden shrink-0 ${isStep4Fullscreen ? "p-3 mt-0.5" : "p-5"}`}
                               >
                                 {/* Dynamic Voice Wave Background when playing */}
                                 {isPlaying && (
@@ -3569,17 +3649,23 @@ export default function App() {
                                     </div>
                                   </div>
                                 )}
-                                <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md border-2 border-white relative z-10">
+                                <div
+                                  className={`bg-indigo-600 rounded-full flex items-center justify-center font-bold text-white shrink-0 shadow-md border-2 border-white relative z-10 ${isStep4Fullscreen ? "w-10 h-10 text-xs" : "w-12 h-12 text-sm"}`}
+                                >
                                   林
                                 </div>
-                                <div className="flex-1 mt-0.5 relative z-10">
-                                  <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest block mb-1.5 flex items-center">
-                                    <Mic className="w-3 h-3 mr-1" />
+                                <div className="flex-1 mt-0.5 relative z-10 min-w-0">
+                                  <span
+                                    className={`font-bold text-indigo-600 uppercase tracking-widest block flex items-center ${isStep4Fullscreen ? "text-[9px] mb-1" : "text-[10px] mb-1.5"}`}
+                                  >
+                                    <Mic className={`${isStep4Fullscreen ? "w-2.5 h-2.5 mr-1" : "w-3 h-3 mr-1"}`} />
                                     {isPlaying
                                       ? "AI 讲师正在播报..."
                                       : "配套讲稿"}
                                   </span>
-                                  <p className="text-sm text-slate-800 italic leading-relaxed font-medium">
+                                  <p
+                                    className={`text-slate-800 italic font-medium ${isStep4Fullscreen ? "text-xs leading-5 line-clamp-2" : "text-sm leading-relaxed"}`}
+                                  >
                                     "{courseware[currentSlide]?.script}"
                                   </p>
                                 </div>
