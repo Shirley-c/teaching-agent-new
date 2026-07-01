@@ -3472,7 +3472,7 @@ export default function App() {
                           >
                             {/* Main pure white canvas slide */}
                             <div
-                              className={`bg-white text-slate-900 overflow-hidden relative shadow-lg border border-slate-200 flex flex-col ${isStep4Fullscreen ? "flex-1 min-h-0 rounded-none p-4 md:p-5" : "rounded-2xl p-6 md:p-7 min-h-[520px]"}`}
+                              className={`bg-white text-slate-900 overflow-hidden relative shadow-lg border border-slate-200 flex flex-col ${isStep4Fullscreen ? "flex-none h-[calc(100dvh-160px)] rounded-none p-4 md:p-5" : "rounded-2xl p-6 md:p-7 min-h-[520px]"}`}
                             >
                               {courseware[currentSlide]?.demoOnly ? (
                                 <div className="flex-1 flex flex-col">
@@ -3548,6 +3548,7 @@ export default function App() {
                                 </>
                               )}
                             </div>
+                            {isStep4Fullscreen && <div className="h-3 shrink-0" />}
                             {/* Bottom Slide Console */}
                             <div className="bg-white border border-slate-200 rounded-xl px-4 py-1.5 flex items-center justify-between text-xs text-slate-600 shadow-none">
                               <div className="flex items-center space-x-4">
@@ -3630,10 +3631,11 @@ export default function App() {
                                 </span>
                               </div>
                             </div>
+                            {isStep4Fullscreen && <div className="h-1.5 shrink-0" />}
                             {/* Script Box (Always visible if script exists) */}
                             {courseware[currentSlide]?.script && (
                               <div
-                                className={`bg-white border ${isPlaying ? "border-indigo-300 shadow-md ring-2 ring-indigo-500/10" : "border-slate-200 shadow-sm"} rounded-xl flex items-start space-x-4 transition-all duration-300 relative overflow-hidden shrink-0 ${isStep4Fullscreen ? "p-3 mt-0.5" : "p-5"}`}
+                                className={`bg-white border ${isPlaying ? "border-indigo-300 shadow-md ring-2 ring-indigo-500/10" : "border-slate-200 shadow-sm"} rounded-xl flex items-start space-x-4 transition-all duration-300 relative overflow-hidden shrink-0 p-5`}
                               >
                                 {/* Dynamic Voice Wave Background when playing */}
                                 {isPlaying && (
